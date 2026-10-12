@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+.env
+.env.*
+
+# Local SQLite (Railway uses DATABASE_URL / Postgres)
+*.db
+
+# Node / frontend
+web/node_modules/
+web/dist/
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+*.log
