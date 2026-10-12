@@ -1,0 +1,13 @@
+.git
+.gitignore
+**/__pycache__
+**/*.pyc
+.venv
+venv
+*.db
+.env
+.env.*
+web/node_modules
+web/dist
+README.md
+radar_banca.db
