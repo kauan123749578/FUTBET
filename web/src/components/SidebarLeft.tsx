@@ -174,16 +174,6 @@ interface PaisMenuItem {
 const PAISES_MENU: PaisMenuItem[] = [
   { nome: 'Brasil', codigo: 'brasil', paisFiltro: 'Brasil' },
   { nome: 'Clubes Internacionais', codigo: 'clubes-internacionais', paisFiltro: 'Clubes Internacionais' },
-  { nome: 'Inglaterra', codigo: 'inglaterra', paisFiltro: 'Inglaterra' },
-  { nome: 'Itália', codigo: 'italia', paisFiltro: 'Itália' },
-  { nome: 'Espanha', codigo: 'espanha', paisFiltro: 'Espanha' },
-  { nome: 'Alemanha', codigo: 'alemanha', paisFiltro: 'Alemanha' },
-  { nome: 'Holanda', codigo: 'holanda', paisFiltro: 'Holanda' },
-  { nome: 'França', codigo: 'franca', paisFiltro: 'França' },
-  { nome: 'Portugal', codigo: 'portugal', paisFiltro: 'Portugal' },
-  { nome: 'Argentina', codigo: 'argentina', paisFiltro: 'Argentina' },
-  { nome: 'México', codigo: 'mexico', paisFiltro: 'México' },
-  { nome: 'Chile', codigo: 'chile', paisFiltro: 'Chile' }
 ];
 
 export const SidebarLeft: React.FC = () => {

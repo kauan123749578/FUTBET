@@ -48,36 +48,9 @@ export const OperadorLoginModal: React.FC = () => {
         return;
       }
     } catch {
-      // Fallback offline se backend offline
-    }
-
-    // Fallback de demonstração offline
-    if (tipoOperador === 'dono') {
-      if ((user === 'admin' || user === 'dono') && pass === 'admin123') {
-        loginOperador({
-          id: 1,
-          nome: 'FUTBET Master',
-          usuario: '@admin',
-          role: 'dono'
-        });
-        setUsuario('');
-        setSenha('');
-        setCarregando(false);
-        return;
-      }
-    } else {
-      if ((user === 'kevin' || user.includes('cambista')) && pass === '1234') {
-        loginOperador({
-          id: 2,
-          nome: user.replace('@', '').toUpperCase() || 'Cambista Operador',
-          usuario: user.startsWith('@') ? user : `@${user}`,
-          role: 'cambista'
-        });
-        setUsuario('');
-        setSenha('');
-        setCarregando(false);
-        return;
-      }
+      setCarregando(false);
+      setErro('Não foi possível conectar ao servidor. Tente novamente.');
+      return;
     }
 
     setCarregando(false);
@@ -174,7 +147,7 @@ export const OperadorLoginModal: React.FC = () => {
           <div className="bg-[#060B18]/60 p-2.5 rounded-lg border border-[#162344] text-[11px] text-gray-400 flex items-center justify-between">
             <span>Dica de acesso teste:</span>
             <span className="font-mono text-yellow-300 font-bold">
-              {tipoOperador === 'dono' ? 'admin / admin123' : 'kevin / 1234'}
+              {tipoOperador === 'dono' ? 'admin / admin123' : 'usuário cadastrado no painel'}
             </span>
           </div>
 

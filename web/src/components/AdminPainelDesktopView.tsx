@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ApiService, BILHETES_FOTO_INICIAIS } from '../services/api';
+import { ApiService } from '../services/api';
 import { BilheteAdmin, CambistaModel, ClienteModel, ConfiguracoesBanca, ResumoCaixaDono } from '../types/betting';
 import { 
   Home, 
@@ -54,7 +54,7 @@ export const AdminPainelDesktopView: React.FC<AdminPainelProps> = ({ onVoltarSim
   const [sidebarMobileAberto, setSidebarMobileAberto] = useState(false);
 
   // Estados principais
-  const [bilhetes, setBilhetes] = useState<BilheteAdmin[]>(BILHETES_FOTO_INICIAIS);
+  const [bilhetes, setBilhetes] = useState<BilheteAdmin[]>([]);
   const [cambistas, setCambistas] = useState<CambistaModel[]>([]);
   const [clientes, setClientes] = useState<ClienteModel[]>([]);
   const [caixa, setCaixa] = useState<ResumoCaixaDono | null>(null);

@@ -1,471 +1,29 @@
-import { 
-  Esporte, 
-  Campeonato, 
-  Jogo, 
-  Bilhete, 
+import {
+  Esporte,
+  Campeonato,
+  Jogo,
+  Bilhete,
   BilheteAdmin,
-  ItemCupom, 
-  ResumoBanca, 
-  CambistaModel, 
-  ClienteModel, 
-  ConfiguracoesBanca, 
-  ResumoCaixaDono 
+  ItemCupom,
+  ResumoBanca,
+  CambistaModel,
+  ClienteModel,
+  ConfiguracoesBanca,
+  ResumoCaixaDono
 } from '../types/betting';
 
-// Constantes de armazenamento local
-const STORAGE_BILHETES_ADMIN_KEY = 'escanteiobet_bilhetes_admin_v3';
-const STORAGE_CONFIGS_KEY = 'escanteiobet_configs_v3';
-const STORAGE_CAMBISTAS_KEY = 'escanteiobet_cambistas_v3';
-const STORAGE_CLIENTES_KEY = 'escanteiobet_clientes_v3';
+const STORAGE_BILHETES_ADMIN_KEY = 'futbet_bilhetes_v4';
+const STORAGE_CONFIGS_KEY = 'futbet_configs_v4';
+const STORAGE_CAMBISTAS_KEY = 'futbet_cambistas_v4';
 
-export const ESPORTES_MOCK: Esporte[] = [
-  { id: 102, nome: 'Futebol', icone: '⚽', totalJogos: 32 },
-  { id: 103, nome: 'Basquete', icone: '🏀', totalJogos: 8 },
-  { id: 104, nome: 'Tênis', icone: '🎾', totalJogos: 6 },
-  { id: 105, nome: 'E-Sports', icone: '🎮', totalJogos: 10 },
-  { id: 106, nome: 'Vôlei', icone: '🏐', totalJogos: 4 },
-];
+export const FUTEBOL_ESPORTE: Esporte = { id: 102, nome: 'Futebol', icone: '⚽', totalJogos: 0 };
 
-export const CAMPEONATOS_MOCK: Campeonato[] = [
-  { id: 574584, idEsporte: 102, pais: 'Brasil', bandeira: '🇧🇷', nome: 'Brasileiro Série A', totalJogos: 10, destaque: true },
-  { id: 574585, idEsporte: 102, pais: 'Brasil', bandeira: '🇧🇷', nome: 'Brasileiro Série B', totalJogos: 4, destaque: true },
-  { id: 574586, idEsporte: 102, pais: 'Clubes Internacionais', bandeira: '🏆', nome: 'Copa Libertadores', totalJogos: 2, destaque: true },
-  { id: 574587, idEsporte: 102, pais: 'Clubes Internacionais', bandeira: '⭐', nome: 'UEFA Champions League', totalJogos: 2, destaque: true },
-  { id: 574588, idEsporte: 102, pais: 'Inglaterra', bandeira: '🏴󠁧󠁢󠁥󠁮󠁧󠁿', nome: 'Premier League', totalJogos: 3, destaque: true },
-  { id: 574589, idEsporte: 102, pais: 'Espanha', bandeira: '🇪🇸', nome: 'La Liga', totalJogos: 3, destaque: true },
-  { id: 574597, idEsporte: 102, pais: 'Itália', bandeira: '🇮🇹', nome: 'Serie A', totalJogos: 2 },
-  { id: 574598, idEsporte: 102, pais: 'Alemanha', bandeira: '🇩🇪', nome: 'Bundesliga', totalJogos: 2 },
-  { id: 574599, idEsporte: 102, pais: 'Holanda', bandeira: '🇳🇱', nome: 'Eredivisie', totalJogos: 1 },
-  { id: 574600, idEsporte: 102, pais: 'França', bandeira: '🇫🇷', nome: 'Ligue 1', totalJogos: 1 },
-  { id: 574601, idEsporte: 102, pais: 'Portugal', bandeira: '🇵🇹', nome: 'Primeira Liga', totalJogos: 1 },
-  { id: 574591, idEsporte: 102, pais: 'Argentina', bandeira: '🇦🇷', nome: 'Liga Profesional', totalJogos: 1 },
-  { id: 574602, idEsporte: 102, pais: 'México', bandeira: '🇲🇽', nome: 'Liga MX', totalJogos: 1 },
-  { id: 574603, idEsporte: 102, pais: 'Chile', bandeira: '🇨🇱', nome: 'Primera División', totalJogos: 1 },
-  { id: 574592, idEsporte: 103, pais: 'EUA', bandeira: '🇺🇸', nome: 'NBA', totalJogos: 8 },
-  { id: 574593, idEsporte: 105, pais: 'Mundial', bandeira: '🌐', nome: 'CS2 Major Championship', totalJogos: 6 },
-];
-
-export const JOGOS_MOCK: Jogo[] = [];
-
-
-// Dados Iniciais Fiéis à Foto do Usuário
-export const BILHETES_FOTO_INICIAIS: BilheteAdmin[] = [
-  {
-    id: 1,
-    codigo: 'TCQG-H6UC',
-    data: '07/10/2026 15:08:36',
-    status: 'Aberto',
-    valor_apostado: 10.00,
-    comissao_valor: 1.00,
-    cotacao_total: 9.13,
-    retorno_potencial: 91.20,
-    tipo: 'M',
-    cliente: 'Kevin',
-    cliente_telefone: '(11) 98765-1111',
-    itens: [
-      { jogo: 'São Paulo FC x EC Vitória', palpite: 'São Paulo Vence', odd: 1.55 },
-      { jogo: 'Flamengo x Palmeiras', palpite: 'Ambas Marcam', odd: 1.75 },
-      { jogo: 'CA Tigre x CA Banfield', palpite: 'CA Tigre Vence', odd: 1.63 },
-      { jogo: 'Cruzeiro x Grêmio', palpite: '+1.5 Gols', odd: 1.25 }
-    ],
-    hash_seguranca: 'SEC-TCQG-H6UC-991',
-    chave_pix_usada: '11999999999',
-    validado_por: 'Kevin Cambista'
-  },
-  {
-    id: 2,
-    codigo: 'F47G-B7R4',
-    data: '07/10/2026 15:08:10',
-    status: 'Aberto',
-    valor_apostado: 5.00,
-    comissao_valor: 0.50,
-    cotacao_total: 75.04,
-    retorno_potencial: 376.20,
-    tipo: 'M',
-    cliente: 'Kevin',
-    cliente_telefone: '(11) 98765-1111',
-    itens: [
-      { jogo: 'São Paulo FC x EC Vitória', palpite: 'São Paulo e +2.5', odd: 2.80 },
-      { jogo: 'Flamengo x Palmeiras', palpite: 'Palmeiras Vence', odd: 3.45 },
-      { jogo: 'Real Madrid x Barcelona', palpite: 'Real Madrid', odd: 2.10 },
-      { jogo: 'Arsenal x Chelsea', palpite: 'Arsenal Vence', odd: 1.85 },
-      { jogo: 'Milan x Inter', palpite: 'Inter Vence', odd: 2.15 }
-    ],
-    hash_seguranca: 'SEC-F47G-B7R4-882',
-    chave_pix_usada: '11999999999',
-    validado_por: 'Kevin Cambista'
-  },
-  {
-    id: 3,
-    codigo: '7MT7-7Q8Q',
-    data: '07/10/2026 15:00:56',
-    status: 'Aberto',
-    valor_apostado: 10.00,
-    comissao_valor: 1.00,
-    cotacao_total: 16.77,
-    retorno_potencial: 167.70,
-    tipo: 'M',
-    cliente: 'Batata',
-    cliente_telefone: '(11) 98765-2222',
-    itens: [
-      { jogo: 'Santos x Ponte Preta', palpite: 'Santos Vence', odd: 1.50 },
-      { jogo: 'Vasco x Botafogo', palpite: 'Ambas Marcam', odd: 1.80 },
-      { jogo: 'Boca Juniors x Racing', palpite: 'Empate', odd: 3.10 },
-      { jogo: 'Bahia x Fortaleza', palpite: '+2.5 Gols', odd: 2.00 }
-    ],
-    hash_seguranca: 'SEC-7MT7-7Q8Q-773',
-    chave_pix_usada: '11999999999',
-    validado_por: 'Kevin Cambista'
-  },
-  {
-    id: 4,
-    codigo: 'APY8-E9QI',
-    data: '07/10/2026 14:34:27',
-    status: 'Aberto',
-    valor_apostado: 50.00,
-    comissao_valor: 5.00,
-    cotacao_total: 129.78,
-    retorno_potencial: 6489.00,
-    tipo: 'M',
-    cliente: 'Henrique Gabriel',
-    cliente_telefone: '(11) 98765-3333',
-    itens: [
-      { jogo: 'Liverpool x Man City', palpite: 'Liverpool Vence', odd: 2.45 },
-      { jogo: 'Bayern x Dortmund', palpite: 'Bayern -1.5', odd: 2.20 },
-      { jogo: 'PSG x Marseille', palpite: '+3.5 Gols', odd: 2.50 },
-      { jogo: 'Benfica x Porto', palpite: 'Benfica Vence', odd: 2.15 },
-      { jogo: 'Atlético-MG x Cruzeiro', palpite: 'Ambas Marcam', odd: 1.95 }
-    ],
-    hash_seguranca: 'SEC-APY8-E9QI-664',
-    chave_pix_usada: '11999999999',
-    validado_por: 'Kevin Cambista'
-  },
-  {
-    id: 5,
-    codigo: 'PDTM-BTZN',
-    data: '07/10/2026 14:30:33',
-    status: 'Aberto',
-    valor_apostado: 10.00,
-    comissao_valor: 1.00,
-    cotacao_total: 22.25,
-    retorno_potencial: 222.50,
-    tipo: 'M',
-    cliente: 'Yari',
-    cliente_telefone: '(11) 98765-4444',
-    itens: [
-      { jogo: 'Internacional x Coritiba', palpite: 'Inter Vence', odd: 1.45 },
-      { jogo: 'Athletico-PR x Juventude', palpite: 'Athletico Vence', odd: 1.65 },
-      { jogo: 'Cuiabá x Criciúma', palpite: 'Menos de 2.5 Gols', odd: 1.60 },
-      { jogo: 'Sport x Ceará', palpite: 'Ambas Marcam', odd: 1.90 },
-      { jogo: 'Goiás x Vila Nova', palpite: 'Goiás Vence', odd: 2.10 }
-    ],
-    hash_seguranca: 'SEC-PDTM-BTZN-555',
-    chave_pix_usada: '11999999999',
-    validado_por: 'Kevin Cambista'
-  },
-  {
-    id: 6,
-    codigo: 'YCOG-XWHN',
-    data: '07/10/2026 12:47:47',
-    status: 'Aberto',
-    valor_apostado: 40.00,
-    comissao_valor: 4.00,
-    cotacao_total: 5.65,
-    retorno_potencial: 226.00,
-    tipo: 'M',
-    cliente: 'Arthur',
-    cliente_telefone: '(11) 98765-5555',
-    itens: [
-      { jogo: 'Flamengo x Palmeiras', palpite: 'Flamengo ou Empate (1X)', odd: 1.32 },
-      { jogo: 'São Paulo FC x EC Vitória', palpite: 'São Paulo Vence', odd: 1.55 },
-      { jogo: 'Real Madrid x Barcelona', palpite: 'Ambas Marcam', odd: 1.55 }
-    ],
-    hash_seguranca: 'SEC-YCOG-XWHN-446',
-    chave_pix_usada: '11999999999',
-    validado_por: 'Kevin Cambista'
-  },
-  {
-    id: 7,
-    codigo: '1FV7E-OY4X',
-    data: '07/10/2026 12:29:43',
-    status: 'Aberto',
-    valor_apostado: 20.00,
-    comissao_valor: 2.00,
-    cotacao_total: 8.90,
-    retorno_potencial: 178.00,
-    tipo: 'M',
-    cliente: 'Jonathas',
-    cliente_telefone: '(11) 98765-6666',
-    itens: [
-      { jogo: 'Manchester United x Everton', palpite: 'United Vence', odd: 1.70 },
-      { jogo: 'Juventus x Napoli', palpite: 'Menos de 2.5 Gols', odd: 1.75 }
-    ],
-    hash_seguranca: 'SEC-1FV7E-OY4X-337',
-    chave_pix_usada: '11999999999',
-    validado_por: 'Kevin Cambista'
-  },
-  {
-    id: 8,
-    codigo: 'LLAV-G9YW',
-    data: '07/10/2026 11:48:29',
-    status: 'Aberto',
-    valor_apostado: 25.00,
-    comissao_valor: 2.50,
-    cotacao_total: 14.56,
-    retorno_potencial: 364.00,
-    tipo: 'M',
-    cliente: 'Yaquinho',
-    cliente_telefone: '(11) 98765-7777',
-    itens: [
-      { jogo: 'Corinthians x Santos', palpite: 'Empate', odd: 3.10 },
-      { jogo: 'Palmeiras x Red Bull Bragantino', palpite: 'Palmeiras Vence', odd: 1.55 }
-    ],
-    hash_seguranca: 'SEC-LLAV-G9YW-228',
-    chave_pix_usada: '11999999999',
-    validado_por: 'Kevin Cambista'
-  },
-  {
-    id: 9,
-    codigo: 'J337-M6W5',
-    data: '07/10/2026 11:34:05',
-    status: 'Aberto',
-    valor_apostado: 10.00,
-    comissao_valor: 1.00,
-    cotacao_total: 59.85,
-    retorno_potencial: 598.50,
-    tipo: 'M',
-    cliente: 'WL',
-    cliente_telefone: '(11) 98765-8888',
-    itens: [
-      { jogo: 'Arsenal x Brighton', palpite: 'Arsenal -1.5', odd: 2.20 },
-      { jogo: 'Aston Villa x Newcastle', palpite: 'Ambas Marcam e +2.5', odd: 2.30 }
-    ],
-    hash_seguranca: 'SEC-J337-M6W5-119',
-    chave_pix_usada: '11999999999',
-    validado_por: 'Kevin Cambista'
-  },
-  {
-    id: 10,
-    codigo: '08ZX-X5J7',
-    data: '07/10/2026 11:30:40',
-    status: 'Aberto',
-    valor_apostado: 60.00,
-    comissao_valor: 6.00,
-    cotacao_total: 87.67,
-    retorno_potencial: 5260.20,
-    tipo: 'M',
-    cliente: 'Allan PGD',
-    cliente_telefone: '(11) 98765-9999',
-    itens: [
-      { jogo: 'Flamengo x Palmeiras', palpite: 'Palmeiras Vence', odd: 3.45 },
-      { jogo: 'São Paulo x Vitória', palpite: 'São Paulo -1.5', odd: 2.30 }
-    ],
-    hash_seguranca: 'SEC-08ZX-X5J7-001',
-    chave_pix_usada: '11999999999',
-    validado_por: 'Kevin Cambista'
-  },
-  {
-    id: 11,
-    codigo: '48TB-S1W9',
-    data: '07/10/2026 11:21:12',
-    status: 'Aberto',
-    valor_apostado: 10.00,
-    comissao_valor: 1.00,
-    cotacao_total: 22.93,
-    retorno_potencial: 229.30,
-    tipo: 'M',
-    cliente: 'Dayane',
-    cliente_telefone: '(11) 98765-0001',
-    itens: [
-      { jogo: 'Bahia x Vasco', palpite: 'Bahia Vence', odd: 1.85 },
-      { jogo: 'Fortaleza x Ceará', palpite: 'Ambas Marcam', odd: 1.90 }
-    ],
-    hash_seguranca: 'SEC-48TB-S1W9-002',
-    chave_pix_usada: '11999999999',
-    validado_por: 'Kevin Cambista'
-  },
-  {
-    id: 12,
-    codigo: 'DAY7-M33H',
-    data: '07/10/2026 11:20:38',
-    status: 'Aberto',
-    valor_apostado: 15.00,
-    comissao_valor: 1.50,
-    cotacao_total: 119.98,
-    retorno_potencial: 1799.70,
-    tipo: 'M',
-    cliente: 'Juzana',
-    cliente_telefone: '(11) 98765-0002',
-    itens: [
-      { jogo: 'São Paulo x Vitória', palpite: 'São Paulo Vence', odd: 1.55 },
-      { jogo: 'Cruzeiro x Grêmio', palpite: 'Empate', odd: 3.20 }
-    ],
-    hash_seguranca: 'SEC-DAY7-M33H-003',
-    chave_pix_usada: '11999999999',
-    validado_por: 'Kevin Cambista'
-  },
-  {
-    id: 13,
-    codigo: 'T7K4-HJOD',
-    data: '07/10/2026 11:14:40',
-    status: 'Aberto',
-    valor_apostado: 10.00,
-    comissao_valor: 1.00,
-    cotacao_total: 190.34,
-    retorno_potencial: 1903.40,
-    tipo: 'M',
-    cliente: 'Henrique Gabriel',
-    cliente_telefone: '(11) 98765-3333',
-    itens: [
-      { jogo: 'Milan x Juventus', palpite: 'Empate', odd: 3.20 },
-      { jogo: 'Roma x Lazio', palpite: 'Roma Vence', odd: 2.35 }
-    ],
-    hash_seguranca: 'SEC-T7K4-HJOD-004',
-    chave_pix_usada: '11999999999',
-    validado_por: 'Kevin Cambista'
-  },
-  {
-    id: 14,
-    codigo: 'L6A5-0DO1',
-    data: '07/10/2026 11:09:49',
-    status: 'Perdeu',
-    valor_apostado: 10.00,
-    comissao_valor: 1.00,
-    cotacao_total: 10.79,
-    retorno_potencial: 107.90,
-    tipo: 'M',
-    cliente: 'Raisson Rodrigues',
-    cliente_telefone: '(11) 98765-0003',
-    itens: [
-      { jogo: 'Chelsea x Everton', palpite: 'Chelsea Vence', odd: 1.50 },
-      { jogo: 'Tottenham x Wolves', palpite: 'Tottenham Vence (Errou)', odd: 1.65 }
-    ],
-    hash_seguranca: 'SEC-L6A5-0DO1-005',
-    chave_pix_usada: '11999999999',
-    validado_por: 'Kevin Cambista'
-  },
-  {
-    id: 15,
-    codigo: '1MNW-Z401',
-    data: '07/10/2026 10:54:14',
-    status: 'Aberto',
-    valor_apostado: 10.00,
-    comissao_valor: 1.00,
-    cotacao_total: 51.54,
-    retorno_potencial: 515.40,
-    tipo: 'M',
-    cliente: 'Pablo Muniz',
-    cliente_telefone: '(11) 98765-0004',
-    itens: [
-      { jogo: 'Corinthians x Athletico-PR', palpite: 'Corinthians Vence', odd: 1.95 }
-    ],
-    hash_seguranca: 'SEC-1MNW-Z401-006',
-    chave_pix_usada: '11999999999',
-    validado_por: 'Kevin Cambista'
-  },
-  {
-    id: 16,
-    codigo: '5BD1-RX70',
-    data: '06/10/2026 21:00:22',
-    status: 'Ganhou',
-    valor_apostado: 30.00,
-    comissao_valor: 3.00,
-    cotacao_total: 18.40,
-    retorno_potencial: 552.00,
-    tipo: 'M',
-    cliente: 'Juan Pablo',
-    cliente_telefone: '(11) 98765-0005',
-    itens: [
-      { jogo: 'São Paulo FC x Coritiba', palpite: 'São Paulo Vence (Acertou)', odd: 1.60 },
-      { jogo: 'Flamengo x Fluminense', palpite: 'Ambas Marcam (Acertou)', odd: 1.80 }
-    ],
-    hash_seguranca: 'SEC-5BD1-RX70-007',
-    chave_pix_usada: '11999999999',
-    validado_por: 'Kevin Cambista'
-  },
-  {
-    id: 17,
-    codigo: 'C5NK-7Z8C',
-    data: '06/10/2026 20:52:42',
-    status: 'Ganhou',
-    valor_apostado: 20.00,
-    comissao_valor: 2.00,
-    cotacao_total: 13.72,
-    retorno_potencial: 274.40,
-    tipo: 'M',
-    cliente: 'Raisson Rodrigues',
-    cliente_telefone: '(11) 98765-0003',
-    itens: [
-      { jogo: 'Real Madrid x Celta Vigo', palpite: 'Real Vence (Acertou)', odd: 1.35 },
-      { jogo: 'Barcelona x Sevilla', palpite: 'Barcelona Vence (Acertou)', odd: 1.45 }
-    ],
-    hash_seguranca: 'SEC-C5NK-7Z8C-008',
-    chave_pix_usada: '11999999999',
-    validado_por: 'Kevin Cambista'
-  }
-];
-
-export const CAMBISTAS_INICIAIS: CambistaModel[] = [
-  {
-    id: 1,
-    nome: 'Kevin Cambista',
-    usuario: 'kevin',
-    telefone: '11988881111',
-    comissao_pct: 10.0,
-    limite_credito: 3000.0,
-    saldo_disponivel: 2840.0,
-    saldo_utilizado: 160.0,
-    total_vendas: 160.0,
-    total_comissao: 16.0,
-    total_bilhetes: 6,
-    status: 'ativo',
-    criado_em: '01/10/2026'
-  },
-  {
-    id: 2,
-    nome: 'Batata Representante',
-    usuario: 'batata',
-    telefone: '11988882222',
-    comissao_pct: 10.0,
-    limite_credito: 2000.0,
-    saldo_disponivel: 1940.0,
-    saldo_utilizado: 60.0,
-    total_vendas: 60.0,
-    total_comissao: 6.0,
-    total_bilhetes: 3,
-    status: 'ativo',
-    criado_em: '02/10/2026'
-  },
-  {
-    id: 3,
-    nome: 'Henrique Cambista',
-    usuario: 'henrique',
-    telefone: '11988883333',
-    comissao_pct: 10.0,
-    limite_credito: 5000.0,
-    saldo_disponivel: 4940.0,
-    saldo_utilizado: 60.0,
-    total_vendas: 60.0,
-    total_comissao: 6.0,
-    total_bilhetes: 2,
-    status: 'ativo',
-    criado_em: '03/10/2026'
-  },
-  {
-    id: 4,
-    nome: 'Arthur Central',
-    usuario: 'arthur',
-    telefone: '11988884444',
-    comissao_pct: 10.0,
-    limite_credito: 2500.0,
-    saldo_disponivel: 2460.0,
-    saldo_utilizado: 40.0,
-    total_vendas: 40.0,
-    total_comissao: 4.0,
-    total_bilhetes: 1,
-    status: 'ativo',
-    criado_em: '04/10/2026'
-  }
+/** Ligas com jogos reais na API ESPN (Brasil + CONMEBOL). */
+export const CAMPEONATOS_FUTEBOL: Campeonato[] = [
+  { id: 574584, idEsporte: 102, pais: 'Brasil', bandeira: '🇧🇷', nome: 'Brasileirão Série A', totalJogos: 0, destaque: true },
+  { id: 574585, idEsporte: 102, pais: 'Brasil', bandeira: '🇧🇷', nome: 'Brasileirão Série B', totalJogos: 0, destaque: true },
+  { id: 574586, idEsporte: 102, pais: 'Clubes Internacionais', bandeira: '🏆', nome: 'Copa Libertadores', totalJogos: 0, destaque: true },
+  { id: 574587, idEsporte: 102, pais: 'Clubes Internacionais', bandeira: '🌎', nome: 'Copa Sul-Americana', totalJogos: 0, destaque: true },
 ];
 
 export const CONFIGS_PADRAO: ConfiguracoesBanca = {
@@ -476,17 +34,13 @@ export const CONFIGS_PADRAO: ConfiguracoesBanca = {
   limite_padrao_cambista: '2000.00'
 };
 
-// Funções de Persistência Local
 function getLocalBilhetes(): BilheteAdmin[] {
   try {
     const raw = localStorage.getItem(STORAGE_BILHETES_ADMIN_KEY);
-    if (!raw) {
-      localStorage.setItem(STORAGE_BILHETES_ADMIN_KEY, JSON.stringify(BILHETES_FOTO_INICIAIS));
-      return BILHETES_FOTO_INICIAIS;
-    }
+    if (!raw) return [];
     return JSON.parse(raw);
   } catch {
-    return BILHETES_FOTO_INICIAIS;
+    return [];
   }
 }
 
@@ -501,16 +55,10 @@ function saveLocalBilhetes(list: BilheteAdmin[]) {
 function getLocalConfigs(): ConfiguracoesBanca {
   try {
     const raw = localStorage.getItem(STORAGE_CONFIGS_KEY);
-    if (!raw) {
-      localStorage.setItem(STORAGE_CONFIGS_KEY, JSON.stringify(CONFIGS_PADRAO));
-      return CONFIGS_PADRAO;
-    }
+    if (!raw) return CONFIGS_PADRAO;
     const parsed = JSON.parse(raw);
-    if (parsed.nome_banca === 'ESCANTEIOBET') {
-      parsed.nome_banca = 'FUTBET';
-      localStorage.setItem(STORAGE_CONFIGS_KEY, JSON.stringify(parsed));
-    }
-    return parsed;
+    if (parsed.nome_banca === 'ESCANTEIOBET') parsed.nome_banca = 'FUTBET';
+    return { ...CONFIGS_PADRAO, ...parsed };
   } catch {
     return CONFIGS_PADRAO;
   }
@@ -527,13 +75,10 @@ function saveLocalConfigs(c: ConfiguracoesBanca) {
 function getLocalCambistas(): CambistaModel[] {
   try {
     const raw = localStorage.getItem(STORAGE_CAMBISTAS_KEY);
-    if (!raw) {
-      localStorage.setItem(STORAGE_CAMBISTAS_KEY, JSON.stringify(CAMBISTAS_INICIAIS));
-      return CAMBISTAS_INICIAIS;
-    }
+    if (!raw) return [];
     return JSON.parse(raw);
   } catch {
-    return CAMBISTAS_INICIAIS;
+    return [];
   }
 }
 
@@ -547,18 +92,17 @@ function saveLocalCambistas(c: CambistaModel[]) {
 
 export function getResumoCambista(): ResumoBanca {
   return {
-    saldoLimiteCambista: 2840.00,
+    saldoLimiteCambista: 0,
     comissaoPercentual: 10,
-    totalBilhetesValidados: 17,
-    totalVendidoHoje: 320.00,
-    totalComissaoHoje: 32.00,
-    totalPremiosPagosHoje: 826.40,
-    lucroLiquidoEstimado: 288.00
+    totalBilhetesValidados: 0,
+    totalVendidoHoje: 0,
+    totalComissaoHoje: 0,
+    totalPremiosPagosHoje: 0,
+    lucroLiquidoEstimado: 0
   };
 }
 
-// =================== SERVIÇO PRINCIPAL DA API (FASTAPI / SQL + OFFLINE FALLBACK) ===================
-
+// =================== SERVIÇO PRINCIPAL DA API (FastAPI) ===================
 export const ApiService = {
   // GET /api/configuracoes
   async getConfiguracoes(): Promise<ConfiguracoesBanca> {
@@ -608,7 +152,7 @@ export const ApiService = {
       const res = await fetch(`/api/bilhetes?${q.toString()}`);
       if (res.ok) {
         const data = await res.json();
-        if (Array.isArray(data) && data.length > 0) {
+        if (Array.isArray(data)) {
           saveLocalBilhetes(data);
           return data;
         }
@@ -753,13 +297,13 @@ export const ApiService = {
       const res = await fetch('/api/cambistas');
       if (res.ok) {
         const data = await res.json();
-        if (Array.isArray(data) && data.length > 0) {
+        if (Array.isArray(data)) {
           saveLocalCambistas(data);
           return data;
         }
       }
     } catch {}
-    return getLocalCambistas();
+    return [];
   },
 
   // POST /api/cambistas
@@ -772,25 +316,7 @@ export const ApiService = {
       });
       if (res.ok) return true;
     } catch {}
-
-    const cambistas = getLocalCambistas();
-    cambistas.push({
-      id: Date.now(),
-      nome: payload.nome,
-      usuario: payload.usuario,
-      telefone: payload.telefone,
-      comissao_pct: payload.comissao_pct,
-      limite_credito: payload.limite_credito,
-      saldo_disponivel: payload.limite_credito,
-      saldo_utilizado: 0,
-      total_vendas: 0,
-      total_comissao: 0,
-      total_bilhetes: 0,
-      status: 'ativo',
-      criado_em: new Date().toLocaleDateString('pt-BR')
-    });
-    saveLocalCambistas(cambistas);
-    return true;
+    return false;
   },
 
   // PUT /api/cambistas/:id
@@ -840,32 +366,10 @@ export const ApiService = {
       const res = await fetch('/api/clientes');
       if (res.ok) {
         const data = await res.json();
-        if (Array.isArray(data) && data.length > 0) return data;
+        if (Array.isArray(data)) return data;
       }
     } catch {}
-
-    // Gera lista a partir dos bilhetes locais
-    const bilhetes = getLocalBilhetes();
-    const mapa: { [key: string]: ClienteModel } = {};
-
-    bilhetes.forEach((b, idx) => {
-      const nome = b.cliente || 'Cliente';
-      if (!mapa[nome]) {
-        mapa[nome] = {
-          id: idx + 1,
-          nome,
-          telefone: b.cliente_telefone || '(11) 9' + Math.floor(10000000 + Math.random() * 90000000),
-          total_apostado: b.valor_apostado,
-          total_bilhetes: 1,
-          criado_em: b.data.split(' ')[0]
-        };
-      } else {
-        mapa[nome].total_apostado += b.valor_apostado;
-        mapa[nome].total_bilhetes += 1;
-      }
-    });
-
-    return Object.values(mapa).sort((a, b) => b.total_apostado - a.total_apostado);
+    return [];
   },
 
   // GET /api/caixa
@@ -911,18 +415,20 @@ export const ApiService = {
 
   // Funções de compatibilidade para esportes e jogos
   async getEsportes(): Promise<Esporte[]> {
-    return ESPORTES_MOCK;
+    return [FUTEBOL_ESPORTE];
   },
 
   async getCampeonatos(idEsporte?: number): Promise<Campeonato[]> {
-    if (!idEsporte) return CAMPEONATOS_MOCK;
-    return CAMPEONATOS_MOCK.filter(c => c.idEsporte === idEsporte);
+    if (idEsporte && idEsporte !== 102) return [];
+    return CAMPEONATOS_FUTEBOL;
   },
 
   async getJogos(params: { idEsporte?: number; idCampeonato?: number; pais?: string; filtro?: string; busca?: string }): Promise<Jogo[]> {
+    if (params.idEsporte && params.idEsporte !== 102) return [];
+
     try {
       const query = new URLSearchParams();
-      if (params.idEsporte) query.append('idEsporte', String(params.idEsporte));
+      query.append('idEsporte', '102');
       if (params.idCampeonato) query.append('idCampeonato', String(params.idCampeonato));
       if (params.pais) query.append('pais', params.pais);
       if (params.filtro) query.append('filtro', params.filtro);
@@ -931,51 +437,12 @@ export const ApiService = {
       const res = await fetch(`/api/jogos?${query.toString()}`);
       if (res.ok) {
         const data = await res.json();
-        if (Array.isArray(data) && data.length > 0) {
-          return data;
-        }
+        if (Array.isArray(data)) return data;
       }
     } catch (e) {
-      console.warn('Erro ao conectar com /api/jogos ESPN, usando fallback local:', e);
+      console.warn('Erro ao buscar jogos na API:', e);
     }
-
-    let result = [...JOGOS_MOCK];
-    if (params.idEsporte && params.idEsporte !== 102) {
-      result = result.filter(j => j.idEsporte === params.idEsporte);
-    } else if (params.idEsporte === 102) {
-      result = result.filter(j => j.idEsporte === 102);
-    }
-    if (params.idCampeonato) {
-      result = result.filter(j => j.idCampeonato === params.idCampeonato);
-    }
-    if (params.pais && params.pais !== 'todos') {
-      const pNorm = params.pais.toLowerCase().trim();
-      result = result.filter(j => j.pais.toLowerCase().includes(pNorm));
-    }
-    if (params.filtro && params.filtro !== 'todos') {
-      const f = params.filtro.toLowerCase().trim();
-      if (f === 'ao_vivo') {
-        result = result.filter(j => j.status === 'ao_vivo');
-      } else if (f === 'hoje') {
-        result = result.filter(j => j.diaSemana === 'Hoje' || j.status === 'ao_vivo' || j.dataHoraFormatada.toLowerCase().includes('hoje'));
-      } else if (f === 'amanha' || f === 'amanhã') {
-        result = result.filter(j => j.diaSemana === 'Amanhã' || j.dataHoraFormatada.toLowerCase().includes('amanhã'));
-      } else if (f.startsWith('2026-')) {
-        result = result.filter(j => j.dataIso === f);
-      } else {
-        result = result.filter(j => j.diaSemana.toLowerCase().includes(f) || j.dataHoraFormatada.toLowerCase().includes(f));
-      }
-    }
-    if (params.busca && params.busca.trim()) {
-      const q = params.busca.toLowerCase().trim();
-      result = result.filter(j =>
-        j.mandante.toLowerCase().includes(q) ||
-        j.visitante.toLowerCase().includes(q) ||
-        j.campeonatoNome.toLowerCase().includes(q) ||
-        j.estadio.toLowerCase().includes(q)
-      );
-    }
-    return result;
+    return [];
   },
 
   // POST /api/bilhetes/validar-pin (Validação oficial pelo cambista via PIN do cliente)
@@ -1096,7 +563,7 @@ export const ApiService = {
           repasse_dono: roundVal((vendas * 1.8 + 250) * (pct_dono / 100))
         }
       },
-      premios_pagos: 826.40,
+      premios_pagos: 0,
       total_bilhetes_validados: bilhetes.length,
       bilhetes: bilhetes.map(b => ({
         codigo: b.codigo,
@@ -1111,7 +578,7 @@ export const ApiService = {
   },
 
   async listarTodosBilhetes(): Promise<Bilhete[]> {
-    const list = getLocalBilhetes();
+    const list = await this.listarBilhetesAdmin();
     return list.map(b => ({
       codigo: b.codigo,
       pin: b.pin || '849201',
