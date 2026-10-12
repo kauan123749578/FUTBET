@@ -35,6 +35,11 @@ api_football = FootballAPIService()
 def on_startup():
     init_db()
 
+
+@app.get("/health")
+def health_check():
+    return {"status": "ok", "service": "futbet-api"}
+
 # ==================== SCHEMAS ====================
 
 class ConfigUpdateSchema(BaseModel):
@@ -95,6 +100,7 @@ class StatusBilheteSchema(BaseModel):
 # ==================== ENDPOINTS DE AUTENTICAÇÃO ====================
 
 @app.post("/api/auth/operador")
+@app.post("/api/operadores/login")
 def login_operador(dados: LoginOperadorSchema, db: Session = Depends(get_db)):
     u = dados.usuario.strip()
     p = dados.senha.strip()
@@ -577,29 +583,38 @@ def get_jogos(
     filtro: Optional[str] = "todos",
     busca: Optional[str] = None
 ):
+    if idEsporte and idEsporte != 102:
+        return []
+
     partidas = api_football.get_all_matches()
     if not partidas:
         return []
 
-    res = []
-    for idx, p in enumerate(partidas):
-        res.append({
-            "id": idx + 1,
-            "idEsporte": 102,
-            "idCampeonato": p.get("league_id", 1),
-            "campeonatoNome": p.get("league_name", "Futebol"),
-            "pais": p.get("country", "Brasil"),
-            "bandeira": p.get("country_code", "brasil"),
-            "mandante": p.get("home_team", "Mandante"),
-            "visitante": p.get("away_team", "Visitante"),
-            "dataHoraFormatada": f"{p.get('match_time', '16:00')} BRT",
-            "diaSemana": p.get("day_label", "Hoje"),
-            "status": "ao_vivo" if p.get("status") == "ao_vivo" else "agendado",
-            "placarMandante": p.get("home_score"),
-            "placarVisitante": p.get("away_score"),
-            "tempoJogo": p.get("clock"),
-            "mercados": p.get("mercados", {})
-        })
+    res = partidas
+    if idCampeonato:
+        res = [p for p in res if p.get("idCampeonato") == idCampeonato]
+    if pais and pais.lower() not in ("todos", ""):
+        p_norm = pais.lower().strip()
+        res = [p for p in res if p_norm in (p.get("pais") or "").lower() or p_norm in (p.get("campeonatoNome") or "").lower()]
+    if filtro and filtro.lower() not in ("todos", ""):
+        f = filtro.lower().strip()
+        if f == "ao_vivo":
+            res = [p for p in res if p.get("status") == "ao_vivo"]
+        elif f == "hoje":
+            res = [p for p in res if p.get("diaSemana") == "Hoje" or p.get("status") == "ao_vivo"]
+        elif f == "amanha" or f == "amanhã":
+            res = [p for p in res if p.get("diaSemana") == "Amanhã"]
+        elif f.startswith("20"):
+            res = [p for p in res if p.get("dataIso") == f]
+    if busca and busca.strip():
+        q = busca.lower().strip()
+        res = [
+            p for p in res
+            if q in (p.get("mandante") or "").lower()
+            or q in (p.get("visitante") or "").lower()
+            or q in (p.get("campeonatoNome") or "").lower()
+            or q in (p.get("estadio") or "").lower()
+        ]
     return res
 
 @app.get("/api/jogos-ao-vivo")

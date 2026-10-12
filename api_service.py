@@ -197,3 +197,115 @@ class FootballAPIService:
         ]
         return filtered
 
+    def get_all_matches(self, days_ahead: int = 7) -> List[Dict[str, Any]]:
+        """Partidas da semana enriquecidas para o frontend web."""
+        raw = self.fetch_week_matches(days_ahead=days_ahead)
+        return [self._to_frontend_jogo(m, idx) for idx, m in enumerate(raw)]
+
+    def get_live_matches(self) -> List[Dict[str, Any]]:
+        """Partidas ao vivo (todas as ligas monitoradas)."""
+        today = self.fetch_today_matches()
+        live_raw = [m for m in today if m.get("status_type") == "live"]
+        return [self._to_frontend_jogo(m, idx) for idx, m in enumerate(live_raw)]
+
+    @staticmethod
+    def _camp_id_for_league(league_id: str) -> int:
+        mapping = {
+            "bra.1": 574584,
+            "bra.2": 574585,
+            "conmebol.libertadores": 574586,
+            "conmebol.sudamericana": 574587,
+        }
+        return mapping.get(league_id, abs(hash(league_id)) % 900000 + 500000)
+
+    def _to_frontend_jogo(self, m: Dict[str, Any], idx: int) -> Dict[str, Any]:
+        home = m.get("home_team", "Mandante")
+        away = m.get("away_team", "Visitante")
+        odds = m.get("odds") or {}
+        home_odd = float(odds.get("home", 2.0))
+        draw_odd = float(odds.get("draw", 3.2))
+        away_odd = float(odds.get("away", 3.0))
+        over_line = odds.get("over_under", 2.5)
+
+        status_type = m.get("status_type", "scheduled")
+        if status_type == "live":
+            status = "ao_vivo"
+        elif status_type == "finished":
+            status = "finalizado"
+        else:
+            status = "agendado"
+
+        dt_brt = m.get("datetime_brt")
+        data_iso = dt_brt.strftime("%Y-%m-%d") if dt_brt else None
+        league_id = m.get("league_id", "bra.1")
+        league_name = m.get("league_name", "Futebol")
+        flag = "🇧🇷" if "Brasil" in league_name or league_id.startswith("bra.") else "🏆"
+
+        now_brt = datetime.now(BRASILIA_TZ)
+        dia = m.get("dia_semana", "")
+        if dt_brt and dt_brt.date() == now_brt.date():
+            dia_label = "Hoje"
+        elif dt_brt and dt_brt.date() == (now_brt + timedelta(days=1)).date():
+            dia_label = "Amanhã"
+        else:
+            dia_label = dia
+
+        return {
+            "id": m.get("id") or idx + 1,
+            "idEsporte": 102,
+            "idCampeonato": self._camp_id_for_league(league_id),
+            "campeonatoNome": league_name,
+            "pais": "Brasil" if league_id.startswith("bra.") else "Internacional",
+            "bandeira": flag,
+            "dataHora": dt_brt.isoformat() if dt_brt else "",
+            "dataHoraFormatada": f"{m.get('date_display', '')} {m.get('time_display', '')}".strip(),
+            "diaSemana": dia_label,
+            "dataIso": data_iso,
+            "mandante": home,
+            "visitante": away,
+            "estadio": m.get("venue", "A definir"),
+            "status": status,
+            "tempoAoVivo": m.get("status", "") if status == "ao_vivo" else None,
+            "placarMandante": m.get("home_score"),
+            "placarVisitante": m.get("away_score"),
+            "mercadoPrincipal": {
+                "casa": {
+                    "id": "1x2_home",
+                    "tipo": "1x2",
+                    "rotulo": f"Casa ({home})",
+                    "valor": home_odd,
+                },
+                "empate": {
+                    "id": "1x2_draw",
+                    "tipo": "1x2",
+                    "rotulo": "Empate",
+                    "valor": draw_odd,
+                },
+                "fora": {
+                    "id": "1x2_away",
+                    "tipo": "1x2",
+                    "rotulo": f"Fora ({away})",
+                    "valor": away_odd,
+                },
+            },
+            "mercadosAdicionais": [
+                {
+                    "id": "gols_ou",
+                    "nome": "Gols Mais/Menos",
+                    "odds": [
+                        {"id": "over_25", "tipo": "ou", "rotulo": f"+{over_line} Gols", "valor": round(1.85 + (idx % 5) * 0.05, 2)},
+                        {"id": "under_25", "tipo": "ou", "rotulo": f"-{over_line} Gols", "valor": round(1.95 + (idx % 4) * 0.04, 2)},
+                    ],
+                },
+                {
+                    "id": "ambas_marcam",
+                    "nome": "Ambas Marcam",
+                    "odds": [
+                        {"id": "btts_sim", "tipo": "btts", "rotulo": "Sim", "valor": round(1.72 + (idx % 6) * 0.03, 2)},
+                        {"id": "btts_nao", "tipo": "btts", "rotulo": "Não", "valor": round(2.05 + (idx % 5) * 0.04, 2)},
+                    ],
+                },
+            ],
+            "totalMercadosDisponiveis": 12,
+        }
+

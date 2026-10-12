@@ -1158,14 +1158,27 @@ export const ApiService = {
 
   async loginOperador(usuario: string, senha: string): Promise<{ sucesso: boolean; operador?: any; erro?: string } | null> {
     try {
-      const res = await fetch('/api/operadores/login', {
+      const res = await fetch('/api/auth/operador', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ usuario, senha })
       });
-      if (res.ok) return await res.json();
-    } catch {}
-    return null;
+      const data = await res.json().catch(() => ({}));
+      if (res.ok && data.success) {
+        return {
+          sucesso: true,
+          operador: {
+            id: data.cambista_id ?? 1,
+            nome: data.nome,
+            usuario: data.usuario,
+            role: data.role as 'dono' | 'cambista',
+          },
+        };
+      }
+      return { sucesso: false, erro: data.detail || 'Usuário ou senha incorretos.' };
+    } catch {
+      return null;
+    }
   },
 
   async cadastrarCliente(payload: { nome: string; telefone: string; senha?: string; saldo?: number }): Promise<{ sucesso: boolean; erro?: string }> {

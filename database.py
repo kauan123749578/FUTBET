@@ -105,9 +105,10 @@ def init_db():
     configs_padrao = {
         "whatsapp_dono": "5511999999999", # Número do Dono para receber o PIX
         "chave_pix": "11999999999",       # Chave PIX do Dono
-        "nome_banca": "ESCANTEIOBET",     # Nome igual a URL da imagem
+        "nome_banca": "FUTBET",
         "comissao_padrao": "10.0",        # 10%
-        "limite_padrao_cambista": "2000.00"
+        "limite_padrao_cambista": "2000.00",
+        "senha_admin": "admin123",
     }
 
     for k, v in configs_padrao.items():

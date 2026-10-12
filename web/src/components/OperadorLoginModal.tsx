@@ -38,6 +38,13 @@ export const OperadorLoginModal: React.FC = () => {
         });
         setUsuario('');
         setSenha('');
+        setModalLoginOperadorAberto(false);
+        setCarregando(false);
+        return;
+      }
+      if (res && !res.sucesso && res.erro) {
+        setCarregando(false);
+        setErro(res.erro);
         return;
       }
     } catch {
@@ -46,7 +53,7 @@ export const OperadorLoginModal: React.FC = () => {
 
     // Fallback de demonstração offline
     if (tipoOperador === 'dono') {
-      if ((user === 'admin' || user === 'dono') && (pass === 'admin' || pass === '123456')) {
+      if ((user === 'admin' || user === 'dono') && pass === 'admin123') {
         loginOperador({
           id: 1,
           nome: 'FUTBET Master',
@@ -59,7 +66,7 @@ export const OperadorLoginModal: React.FC = () => {
         return;
       }
     } else {
-      if (user.includes('kevin') || user.includes('cambista') || pass === '123') {
+      if ((user === 'kevin' || user.includes('cambista')) && pass === '1234') {
         loginOperador({
           id: 2,
           nome: user.replace('@', '').toUpperCase() || 'Cambista Operador',
@@ -167,7 +174,7 @@ export const OperadorLoginModal: React.FC = () => {
           <div className="bg-[#060B18]/60 p-2.5 rounded-lg border border-[#162344] text-[11px] text-gray-400 flex items-center justify-between">
             <span>Dica de acesso teste:</span>
             <span className="font-mono text-yellow-300 font-bold">
-              {tipoOperador === 'dono' ? 'admin / admin' : '@kevin / 123'}
+              {tipoOperador === 'dono' ? 'admin / admin123' : 'kevin / 1234'}
             </span>
           </div>
 
