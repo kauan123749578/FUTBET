@@ -417,17 +417,17 @@ export const MatchTable: React.FC = () => {
                           statusPalpite: 'pendente'
                         })
                       }
-                      className={`w-16 h-10 rounded-lg flex flex-col items-center justify-center font-mono font-bold transition-all shadow-sm ${
+                      className={`w-[4.25rem] h-11 rounded-lg flex flex-col items-center justify-center font-mono transition-all ${
                         isCasaSel
-                          ? 'bg-[#00E676] text-gray-950 ring-2 ring-emerald-400 scale-[1.03]'
-                          : 'bg-[#182338] text-white hover:bg-[#202E4A] hover:border-blue-400 border border-[#233252]'
+                          ? 'bg-yellow-400 text-[#0a1628] ring-2 ring-yellow-300 scale-[1.02]'
+                          : 'bg-[#161f30] hover:bg-[#1c2838] border border-[#23334d] hover:border-[#3d5278]'
                       }`}
                       title={`Apostar em ${casaOdd.rotulo}`}
                     >
                       <span className="text-[9px] uppercase tracking-wider text-gray-400 font-sans font-semibold">
                         {isCasaSel ? '✓ Mandante' : '1 (Casa)'}
                       </span>
-                      <span className="text-xs sm:text-sm font-black">
+                      <span className={`text-sm font-bold ${isCasaSel ? 'text-[#0a1628]' : 'text-amber-100'}`}>
                         {casaOdd.valor.toFixed(2)}
                       </span>
                     </button>
@@ -449,17 +449,17 @@ export const MatchTable: React.FC = () => {
                           statusPalpite: 'pendente'
                         })
                       }
-                      className={`w-16 h-10 rounded-lg flex flex-col items-center justify-center font-mono font-bold transition-all shadow-sm ${
+                      className={`w-[4.25rem] h-11 rounded-lg flex flex-col items-center justify-center font-mono transition-all ${
                         isEmpateSel
-                          ? 'bg-[#00E676] text-gray-950 ring-2 ring-emerald-400 scale-[1.03]'
-                          : 'bg-[#182338] text-white hover:bg-[#202E4A] hover:border-blue-400 border border-[#233252]'
+                          ? 'bg-yellow-400 text-[#0a1628] ring-2 ring-yellow-300 scale-[1.02]'
+                          : 'bg-[#161f30] hover:bg-[#1c2838] border border-[#23334d] hover:border-[#3d5278]'
                       }`}
                       title="Apostar no Empate"
                     >
                       <span className="text-[9px] uppercase tracking-wider text-gray-400 font-sans font-semibold">
                         {isEmpateSel ? '✓ Empate' : 'X (Empate)'}
                       </span>
-                      <span className="text-xs sm:text-sm font-black">
+                      <span className={`text-sm font-bold ${isEmpateSel ? 'text-[#0a1628]' : 'text-amber-100'}`}>
                         {empateOdd.valor.toFixed(2)}
                       </span>
                     </button>
@@ -481,32 +481,31 @@ export const MatchTable: React.FC = () => {
                           statusPalpite: 'pendente'
                         })
                       }
-                      className={`w-16 h-10 rounded-lg flex flex-col items-center justify-center font-mono font-bold transition-all shadow-sm ${
+                      className={`w-[4.25rem] h-11 rounded-lg flex flex-col items-center justify-center font-mono transition-all ${
                         isForaSel
-                          ? 'bg-[#00E676] text-gray-950 ring-2 ring-emerald-400 scale-[1.03]'
-                          : 'bg-[#182338] text-white hover:bg-[#202E4A] hover:border-blue-400 border border-[#233252]'
+                          ? 'bg-yellow-400 text-[#0a1628] ring-2 ring-yellow-300 scale-[1.02]'
+                          : 'bg-[#161f30] hover:bg-[#1c2838] border border-[#23334d] hover:border-[#3d5278]'
                       }`}
                       title={`Apostar em ${foraOdd.rotulo}`}
                     >
                       <span className="text-[9px] uppercase tracking-wider text-gray-400 font-sans font-semibold">
                         {isForaSel ? '✓ Visitante' : '2 (Fora)'}
                       </span>
-                      <span className="text-xs sm:text-sm font-black">
+                      <span className={`text-sm font-bold ${isForaSel ? 'text-[#0a1628]' : 'text-amber-100'}`}>
                         {foraOdd.valor.toFixed(2)}
                       </span>
                     </button>
 
-                    {/* +X Mercados Button (Matching screenshot blue button +468) */}
                     <button
                       onClick={() => setJogoMercadosAberto(jogo)}
-                      className="w-16 h-10 rounded-lg bg-[#0047E0] hover:bg-[#0057FF] text-white font-mono font-black text-xs flex flex-col items-center justify-center transition-colors border border-blue-400/40 shadow"
+                      className="w-[4.25rem] h-11 rounded-lg bg-[#121a2e] hover:bg-[#1a2438] text-gray-300 font-mono text-xs flex flex-col items-center justify-center transition-colors border border-[#2a3654]"
                       title="Ver todos os mercados adicionais (Gols, Ambas Marcam, Escanteios)"
                     >
                       <span className="flex items-center gap-0.5">
                         <Plus className="w-3 h-3" />
                         <span>{jogo.totalMercadosDisponiveis}</span>
                       </span>
-                      <span className="text-[8px] uppercase tracking-tighter text-blue-200">
+                      <span className="text-[8px] uppercase tracking-tighter text-gray-500">
                         Mercados
                       </span>
                     </button>

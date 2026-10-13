@@ -13,6 +13,7 @@ import { AdminPainelDesktopView } from './components/AdminPainelDesktopView';
 import { CambistaPainelView } from './components/CambistaPainelView';
 import { OperadorLoginModal } from './components/OperadorLoginModal';
 import { ClientAuthModal } from './components/ClientAuthModal';
+import { WhatsAppFloatButton } from './components/WhatsAppFloatButton';
 
 const MainLayout: React.FC = () => {
   const { abaAtiva, setAbaAtiva } = useBetting();
@@ -25,6 +26,7 @@ const MainLayout: React.FC = () => {
         <TicketReceiptModal />
         <OperadorLoginModal />
         <ClientAuthModal />
+        <WhatsAppFloatButton />
       </>
     );
   }
@@ -37,6 +39,7 @@ const MainLayout: React.FC = () => {
         <TicketReceiptModal />
         <OperadorLoginModal />
         <ClientAuthModal />
+        <WhatsAppFloatButton />
       </>
     );
   }
@@ -74,6 +77,7 @@ const MainLayout: React.FC = () => {
       <TicketReceiptModal />
       <OperadorLoginModal />
       <ClientAuthModal />
+      <WhatsAppFloatButton />
     </div>
   );
 };

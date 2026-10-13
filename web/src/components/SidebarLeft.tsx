@@ -303,13 +303,13 @@ export const SidebarLeft: React.FC = () => {
           {futebolAberto && (
             <div className="space-y-1 pl-1 pt-1">
               {/* 📅 JOGOS DO DIA */}
-              <div className="rounded-lg overflow-hidden border border-gray-300/30">
+              <div className="rounded-lg overflow-hidden border border-[#1B2438]">
                 <button
                   onClick={() => setJogosDoDiaAberto(!jogosDoDiaAberto)}
-                  className={`w-full flex items-center justify-between px-3 py-2 text-xs font-bold transition-colors ${
+                  className={`w-full flex items-center justify-between px-3 py-2 text-xs font-bold transition-colors border-l-2 ${
                     jogosDoDiaAberto || (filtros.dataFiltro && filtros.dataFiltro !== 'todos')
-                      ? 'bg-[#D1D5DB] text-gray-950 font-extrabold'
-                      : 'bg-white text-gray-900 hover:bg-gray-100'
+                      ? 'bg-[#121a2e] text-yellow-400 border-yellow-400'
+                      : 'bg-[#101728] text-gray-300 border-transparent hover:bg-[#121a2e] hover:text-white'
                   }`}
                 >
                   <div className="flex items-center gap-2.5 truncate">
@@ -317,7 +317,7 @@ export const SidebarLeft: React.FC = () => {
                     <span className="truncate">Jogos do Dia</span>
                   </div>
                   {jogosDoDiaAberto ? (
-                    <ChevronDown className="w-4 h-4 shrink-0 text-gray-700" />
+                    <ChevronDown className="w-4 h-4 shrink-0 text-gray-400" />
                   ) : (
                     <ChevronRight className="w-4 h-4 shrink-0 text-gray-500" />
                   )}
@@ -357,13 +357,15 @@ export const SidebarLeft: React.FC = () => {
                 const isPaisAtivo = filtros.paisFiltro === paisItem.paisFiltro;
 
                 return (
-                  <div key={paisItem.nome} className="rounded-lg overflow-hidden border border-gray-300/30">
+                  <div key={paisItem.nome} className="rounded-lg overflow-hidden border border-[#1B2438]">
                     <button
                       onClick={() => togglePais(paisItem.nome)}
-                      className={`w-full flex items-center justify-between px-3 py-2 text-xs font-bold transition-all ${
-                        isPaisAtivo || isAberto
-                          ? 'bg-[#D1D5DB] text-gray-950 font-extrabold'
-                          : 'bg-white text-gray-900 hover:bg-gray-100'
+                      className={`w-full flex items-center justify-between px-3 py-2 text-xs font-bold transition-all border-l-2 ${
+                        isPaisAtivo
+                          ? 'bg-[#121a2e] text-yellow-400 border-yellow-400'
+                          : isAberto
+                            ? 'bg-[#121a2e] text-white border-blue-500/60'
+                            : 'bg-[#101728] text-gray-300 border-transparent hover:bg-[#121a2e] hover:text-white'
                       }`}
                     >
                       <div className="flex items-center gap-2.5 truncate">
@@ -371,7 +373,7 @@ export const SidebarLeft: React.FC = () => {
                         <span className="truncate">{paisItem.nome}</span>
                       </div>
                       {isAberto ? (
-                        <ChevronDown className="w-4 h-4 shrink-0 text-gray-700" />
+                        <ChevronDown className="w-4 h-4 shrink-0 text-gray-400" />
                       ) : (
                         <ChevronRight className="w-4 h-4 shrink-0 text-gray-500" />
                       )}
