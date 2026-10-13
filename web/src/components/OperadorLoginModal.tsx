@@ -33,9 +33,13 @@ export const OperadorLoginModal: React.FC = () => {
       if (res && res.sucesso && res.operador) {
         loginOperador({
           id: res.operador.id,
+          cambista_id: res.operador.cambista_id,
           nome: res.operador.nome,
           usuario: res.operador.usuario,
-          role: res.operador.role as 'dono' | 'cambista'
+          role: res.operador.role as 'dono' | 'cambista',
+          telefone: res.operador.telefone,
+          comissao_pct: res.operador.comissao_pct,
+          limite_credito: res.operador.limite_credito,
         });
         setUsuario('');
         setSenha('');

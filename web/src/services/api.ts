@@ -626,6 +626,36 @@ export const ApiService = {
     return { success: false, erro: 'Erro ao validar bilhete' };
   },
 
+  async validarSessaoOperador(sessao: {
+    usuario: string;
+    role: 'dono' | 'cambista';
+    cambista_id?: number;
+  }): Promise<{ valid: boolean; operador?: Record<string, unknown> }> {
+    try {
+      const params = new URLSearchParams({
+        usuario: sessao.usuario,
+        role: sessao.role,
+      });
+      if (sessao.cambista_id != null) params.set('cambista_id', String(sessao.cambista_id));
+      const res = await fetch(`/api/auth/operador/validar?${params}`);
+      if (!res.ok) return { valid: false };
+      return await res.json();
+    } catch {
+      return { valid: false };
+    }
+  },
+
+  async validarSessaoCliente(telefone: string): Promise<{ valid: boolean; cliente?: { id: number; nome: string; telefone: string } }> {
+    try {
+      const params = new URLSearchParams({ telefone });
+      const res = await fetch(`/api/clientes/validar?${params}`);
+      if (!res.ok) return { valid: false };
+      return await res.json();
+    } catch {
+      return { valid: false };
+    }
+  },
+
   async loginOperador(usuario: string, senha: string): Promise<{ sucesso: boolean; operador?: any; erro?: string } | null> {
     try {
       const res = await fetch('/api/auth/operador', {
@@ -639,9 +669,13 @@ export const ApiService = {
           sucesso: true,
           operador: {
             id: data.cambista_id ?? 1,
+            cambista_id: data.cambista_id,
             nome: data.nome,
             usuario: data.usuario,
             role: data.role as 'dono' | 'cambista',
+            telefone: data.telefone,
+            comissao_pct: data.comissao_pct,
+            limite_credito: data.limite_credito,
           },
         };
       }

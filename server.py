@@ -140,6 +140,46 @@ def login_operador(dados: LoginOperadorSchema, db: Session = Depends(get_db)):
 
     raise HTTPException(status_code=401, detail="Usuário ou senha incorretos.")
 
+
+@app.get("/api/auth/operador/validar")
+def validar_sessao_operador(
+    usuario: str,
+    role: str,
+    cambista_id: Optional[int] = None,
+    db: Session = Depends(get_db),
+):
+    u = (usuario or "").strip().lower()
+    admin_user = (os.getenv("ADMIN_USUARIO") or os.getenv("ADMIN_USERNAME") or "admin").strip().lower()
+
+    if role == "dono" and u == admin_user:
+        return {
+            "valid": True,
+            "operador": {
+                "role": "dono",
+                "nome": "Dono da Banca (Administrador)",
+                "usuario": admin_user,
+            },
+        }
+
+    if role == "cambista" and cambista_id:
+        cambista = db.query(Cambista).filter(Cambista.id == cambista_id, Cambista.usuario == u).first()
+        if cambista and cambista.status != "bloqueado":
+            return {
+                "valid": True,
+                "operador": {
+                    "role": "cambista",
+                    "cambista_id": cambista.id,
+                    "nome": cambista.nome,
+                    "usuario": cambista.usuario,
+                    "telefone": cambista.telefone,
+                    "comissao_pct": cambista.comissao_pct,
+                    "limite_credito": cambista.limite_credito,
+                },
+            }
+
+    return {"valid": False}
+
+
 # ==================== ENDPOINTS DE CLIENTES ====================
 
 @app.post("/api/clientes/cadastro")
@@ -186,8 +226,23 @@ def login_cliente(dados: ClienteLoginSchema, db: Session = Depends(get_db)):
     return {
         "success": True,
         "message": f"Bem-vindo de volta, {cli.nome}!",
-        "cliente": {"id": cli.id, "nome": cli.nome, "telefone": cli.telefone}
+        "cliente": {"id": cli.id, "nome": cli.nome, "telefone": cli.telefone},
     }
+
+
+@app.get("/api/clientes/validar")
+def validar_sessao_cliente(telefone: str, db: Session = Depends(get_db)):
+    t = (telefone or "").strip()
+    if not t:
+        return {"valid": False}
+    cli = db.query(Cliente).filter(Cliente.telefone == t).first()
+    if not cli or not cli.is_registered:
+        return {"valid": False}
+    return {
+        "valid": True,
+        "cliente": {"id": cli.id, "nome": cli.nome, "telefone": cli.telefone},
+    }
+
 
 @app.get("/api/clientes")
 def listar_clientes(db: Session = Depends(get_db)):

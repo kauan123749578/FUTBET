@@ -1,6 +1,31 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import { ItemCupom, TipoAposta, Bilhete, FiltrosAtivos, Jogo, SessaoOperador, SessaoCliente } from '../types/betting';
 import { ApiService } from '../services/api';
+import {
+  loadAbaPersistida,
+  saveAbaPersistida,
+  clearAbaPersistida,
+  loadClientePersistido,
+  saveClientePersistido,
+  clearClientePersistido,
+  loadOperadorPersistido,
+  saveOperadorPersistido,
+  clearOperadorPersistido,
+  type AbaPersistida,
+} from '../services/sessionPersist';
+
+type AbaApp = AbaPersistida;
+
+function abaInicial(): AbaApp {
+  const op = loadOperadorPersistido();
+  const aba = loadAbaPersistida();
+  if (op && aba === 'admin' && op.role === 'dono') return 'admin';
+  if (op && aba === 'cambista') return 'cambista';
+  if (aba === 'apostador' || aba === 'conferir' || aba === 'regulamento') return aba;
+  if (op?.role === 'dono') return 'admin';
+  if (op?.role === 'cambista') return 'cambista';
+  return 'apostador';
+}
 
 interface BettingContextType {
   // Filtros
@@ -97,28 +122,13 @@ export const BettingProvider: React.FC<{ children: React.ReactNode }> = ({ child
   }, [filtros.idEsporte, filtros.idCampeonato]);
 
   // Navegação entre abas
-  const [abaAtiva, setAbaAtivaState] = useState<'apostador' | 'conferir' | 'cambista' | 'regulamento' | 'admin'>('apostador');
+  const [abaAtiva, setAbaAtivaState] = useState<AbaApp>(() => abaInicial());
 
-  // Sessão de Operador (Dono / Cambista)
-  const [sessaoOperador, setSessaoOperador] = useState<SessaoOperador | null>(() => {
-    try {
-      const s = sessionStorage.getItem('radar_bet_sessao_operador');
-      return s ? JSON.parse(s) : null;
-    } catch {
-      return null;
-    }
-  });
+  const [sessaoOperador, setSessaoOperador] = useState<SessaoOperador | null>(() => loadOperadorPersistido());
 
   const [modalLoginOperadorAberto, setModalLoginOperadorAberto] = useState(false);
   const [sidebarMobileAberto, setSidebarMobileAberto] = useState(false);
-  const [sessaoCliente, setSessaoCliente] = useState<SessaoCliente | null>(() => {
-    try {
-      const s = localStorage.getItem('futbet_sessao_cliente_v1');
-      return s ? JSON.parse(s) : null;
-    } catch {
-      return null;
-    }
-  });
+  const [sessaoCliente, setSessaoCliente] = useState<SessaoCliente | null>(() => loadClientePersistido());
 
   const [modalCadastroClienteAberto, setModalCadastroClienteAberto] = useState(false);
   const [clienteAuthModo, setClienteAuthModo] = useState<'cadastro' | 'login'>('cadastro');
@@ -162,16 +172,71 @@ export const BettingProvider: React.FC<{ children: React.ReactNode }> = ({ child
     return () => { ok = false; clearInterval(t); };
   }, []);
 
+  useEffect(() => {
+    let cancelado = false;
+    (async () => {
+      const cli = loadClientePersistido();
+      const op = loadOperadorPersistido();
+      if (!cli?.telefone && !op?.usuario) return;
+      if (cli?.telefone) {
+        const r = await ApiService.validarSessaoCliente(cli.telefone);
+        if (cancelado) return;
+        if (!r.valid || !r.cliente) {
+          clearClientePersistido();
+          setSessaoCliente(null);
+        } else {
+          const atualizado: SessaoCliente = {
+            id: r.cliente.id,
+            nome: r.cliente.nome,
+            telefone: r.cliente.telefone,
+          };
+          setSessaoCliente(atualizado);
+          saveClientePersistido(atualizado);
+        }
+      }
+
+      if (op?.usuario) {
+        const r = await ApiService.validarSessaoOperador({
+          usuario: op.usuario,
+          role: op.role,
+          cambista_id: op.cambista_id,
+        });
+        if (cancelado) return;
+        if (!r.valid) {
+          clearOperadorPersistido();
+          clearAbaPersistida();
+          setSessaoOperador(null);
+          setAbaAtivaState('apostador');
+        } else if (r.operador) {
+          const atualizado: SessaoOperador = {
+            role: op.role,
+            nome: String(r.operador.nome ?? op.nome),
+            usuario: String(r.operador.usuario ?? op.usuario),
+            cambista_id: (r.operador.cambista_id as number | undefined) ?? op.cambista_id,
+            telefone: (r.operador.telefone as string | undefined) ?? op.telefone,
+            comissao_pct: (r.operador.comissao_pct as number | undefined) ?? op.comissao_pct,
+            limite_credito: (r.operador.limite_credito as number | undefined) ?? op.limite_credito,
+          };
+          setSessaoOperador(atualizado);
+          saveOperadorPersistido(atualizado);
+        }
+      }
+    })();
+    return () => {
+      cancelado = true;
+    };
+  }, []);
+
   const loginCliente = useCallback((dados: SessaoCliente) => {
     setSessaoCliente(dados);
-    localStorage.setItem('futbet_sessao_cliente_v1', JSON.stringify(dados));
+    saveClientePersistido(dados);
     setModalCadastroClienteAberto(false);
     setClienteAuthMensagem(null);
   }, []);
 
   const logoutCliente = useCallback(() => {
     setSessaoCliente(null);
-    localStorage.removeItem('futbet_sessao_cliente_v1');
+    clearClientePersistido();
   }, []);
 
   const abrirCadastroCliente = useCallback((modo: 'cadastro' | 'login' = 'cadastro', mensagem?: string) => {
@@ -182,22 +247,22 @@ export const BettingProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const loginOperador = useCallback((dados: SessaoOperador) => {
     setSessaoOperador(dados);
-    sessionStorage.setItem('radar_bet_sessao_operador', JSON.stringify(dados));
+    saveOperadorPersistido(dados);
     setModalLoginOperadorAberto(false);
-    if (dados.role === 'dono') {
-      setAbaAtivaState('admin');
-    } else {
-      setAbaAtivaState('cambista');
-    }
+    const aba: AbaApp = dados.role === 'dono' ? 'admin' : 'cambista';
+    setAbaAtivaState(aba);
+    saveAbaPersistida(aba);
   }, []);
 
   const logoutOperador = useCallback(() => {
     setSessaoOperador(null);
-    sessionStorage.removeItem('radar_bet_sessao_operador');
+    clearOperadorPersistido();
+    clearAbaPersistida();
     setAbaAtivaState('apostador');
+    saveAbaPersistida('apostador');
   }, []);
 
-  const setAbaAtiva = useCallback((aba: 'apostador' | 'conferir' | 'cambista' | 'regulamento' | 'admin') => {
+  const setAbaAtiva = useCallback((aba: AbaApp) => {
     if (aba === 'admin') {
       if (!sessaoOperador || sessaoOperador.role !== 'dono') {
         setModalLoginOperadorAberto(true);
@@ -211,6 +276,7 @@ export const BettingProvider: React.FC<{ children: React.ReactNode }> = ({ child
       }
     }
     setAbaAtivaState(aba);
+    saveAbaPersistida(aba);
   }, [sessaoOperador]);
 
   // Estado do Cupom
