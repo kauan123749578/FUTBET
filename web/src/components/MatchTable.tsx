@@ -341,13 +341,15 @@ export const MatchTable: React.FC = () => {
                             <img
                               src={jogo.mandanteEscudo}
                               alt={jogo.mandante}
-                              className="w-4 h-4 object-contain shrink-0"
+                              className="w-5 h-5 object-contain shrink-0 rounded-sm bg-white/5"
+                              loading="lazy"
+                              referrerPolicy="no-referrer"
                               onError={(e) => {
                                 (e.target as HTMLElement).style.display = 'none';
                               }}
                             />
                           ) : (
-                            <span className="text-xs">🛡️</span>
+                            <span className="text-xs">⚽</span>
                           )}
                           <span className="text-xs sm:text-sm font-bold text-gray-100 truncate">
                             {jogo.mandante}
@@ -367,13 +369,15 @@ export const MatchTable: React.FC = () => {
                             <img
                               src={jogo.visitanteEscudo}
                               alt={jogo.visitante}
-                              className="w-4 h-4 object-contain shrink-0"
+                              className="w-5 h-5 object-contain shrink-0 rounded-sm bg-white/5"
+                              loading="lazy"
+                              referrerPolicy="no-referrer"
                               onError={(e) => {
                                 (e.target as HTMLElement).style.display = 'none';
                               }}
                             />
                           ) : (
-                            <span className="text-xs">🛡️</span>
+                            <span className="text-xs">⚽</span>
                           )}
                           <span className="text-xs sm:text-sm font-bold text-gray-100 truncate">
                             {jogo.visitante}

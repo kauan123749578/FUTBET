@@ -15,6 +15,21 @@ class FootballAPIService:
         }
         self.base_url = "https://site.api.espn.com/apis/site/v2/sports/soccer"
 
+    @staticmethod
+    def _team_logo_url(team: Dict[str, Any]) -> Optional[str]:
+        if not team:
+            return None
+        logo = team.get("logo")
+        if logo and isinstance(logo, str) and logo.startswith("http"):
+            return logo
+        logos = team.get("logos")
+        if isinstance(logos, list):
+            for item in logos:
+                href = item.get("href") if isinstance(item, dict) else None
+                if href and str(href).startswith("http"):
+                    return href
+        return None
+
     def _parse_match(self, event: Dict[str, Any], league_info: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         try:
             competitions = event.get("competitions", [])
@@ -31,15 +46,21 @@ class FootballAPIService:
             away_team = None
             home_score = None
             away_score = None
-            
+            home_logo = None
+            away_logo = None
+
             for c in competitors:
-                team_name = c.get("team", {}).get("displayName", "Time Desconhecido")
+                team = c.get("team") or {}
+                team_name = team.get("displayName", "Time Desconhecido")
+                logo_url = self._team_logo_url(team)
                 score = c.get("score")
                 if c.get("homeAway") == "home":
                     home_team = team_name
+                    home_logo = logo_url
                     home_score = int(score) if score is not None and score != "" else None
                 else:
                     away_team = team_name
+                    away_logo = logo_url
                     away_score = int(score) if score is not None and score != "" else None
 
             # Data e Horário em Horário de Brasília
@@ -90,6 +111,8 @@ class FootballAPIService:
                 "is_today": is_today,
                 "home_team": home_team or "Mandante",
                 "away_team": away_team or "Visitante",
+                "home_logo": home_logo,
+                "away_logo": away_logo,
                 "home_score": home_score,
                 "away_score": away_score,
                 "status": status_formatted,
@@ -263,6 +286,8 @@ class FootballAPIService:
             "dataIso": data_iso,
             "mandante": home,
             "visitante": away,
+            "mandanteEscudo": m.get("home_logo"),
+            "visitanteEscudo": m.get("away_logo"),
             "estadio": m.get("venue", "A definir"),
             "status": status,
             "tempoAoVivo": m.get("status", "") if status == "ao_vivo" else None,
