@@ -188,7 +188,9 @@ export const SidebarLeft: React.FC = () => {
     sessaoOperador,
     setModalLoginOperadorAberto,
     sidebarMobileAberto,
-    setSidebarMobileAberto
+    setSidebarMobileAberto,
+    totalAoVivo,
+    contagemPorCampeonato,
   } = useBetting();
 
   const [campeonatos, setCampeonatos] = useState<Campeonato[]>([]);
@@ -417,7 +419,22 @@ export const SidebarLeft: React.FC = () => {
                               }`}
                             >
                               <span className="truncate">{liga.nome}</span>
-                              <span className="text-[10px] text-gray-500 font-mono ml-1">{liga.totalJogos}</span>
+                              {(() => {
+                                const s = contagemPorCampeonato[liga.id];
+                                const n = s && s.aoVivo > 0 ? s.aoVivo : s?.total ?? 0;
+                                if (n <= 0) return null;
+                                return (
+                                  <span
+                                    className={`text-[10px] font-bold font-mono ml-1 px-1.5 py-0.5 rounded-full ${
+                                      s && s.aoVivo > 0
+                                        ? 'bg-red-950 text-red-300 border border-red-800'
+                                        : 'bg-gray-800 text-gray-400 border border-gray-700'
+                                    }`}
+                                  >
+                                    {n}
+                                  </span>
+                                );
+                              })()}
                             </button>
                           );
                         })}
@@ -449,8 +466,12 @@ export const SidebarLeft: React.FC = () => {
             <Radio className="w-4 h-4 text-gray-400" />
             <span>Ao Vivo</span>
           </div>
-          <span className="bg-gray-800 text-gray-400 text-[10px] font-bold px-2 py-0.5 rounded-full border border-gray-700">
-            0
+          <span
+            className={`text-[10px] font-bold px-2 py-0.5 rounded-full border min-w-[1.5rem] text-center ${
+              totalAoVivo > 0 ? 'bg-red-600 text-white border-red-400' : 'bg-gray-800 text-gray-400 border-gray-700'
+            }`}
+          >
+            {totalAoVivo}
           </span>
         </button>
 

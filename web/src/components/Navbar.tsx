@@ -28,22 +28,8 @@ export const Navbar: React.FC = () => {
     sessaoCliente,
     logoutCliente,
     abrirCadastroCliente,
+    totalAoVivo,
   } = useBetting();
-  const [totalAoVivo, setTotalAoVivo] = useState(0);
-
-  React.useEffect(() => {
-    const fetchAoVivo = () => {
-      fetch('/api/jogos-ao-vivo')
-        .then(r => r.json())
-        .then(d => {
-          if (typeof d.total === 'number') setTotalAoVivo(d.total);
-        })
-        .catch(() => {});
-    };
-    fetchAoVivo();
-    const interval = setInterval(fetchAoVivo, 20000);
-    return () => clearInterval(interval);
-  }, []);
 
   return (
     <>

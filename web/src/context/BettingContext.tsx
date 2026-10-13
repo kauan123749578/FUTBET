@@ -62,6 +62,11 @@ interface BettingContextType {
   setClienteAuthModo: (modo: 'cadastro' | 'login') => void;
   clienteAuthMensagem: string | null;
   abrirCadastroCliente: (modo?: 'cadastro' | 'login', mensagem?: string) => void;
+
+  /** Partidas ao vivo (API) — navbar e sidebar */
+  totalAoVivo: number;
+  /** Contagem por id de campeonato (jogos ativos / ao vivo) */
+  contagemPorCampeonato: Record<number, { total: number; aoVivo: number }>;
 }
 
 type voidCallback = () => void;
@@ -118,6 +123,44 @@ export const BettingProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const [modalCadastroClienteAberto, setModalCadastroClienteAberto] = useState(false);
   const [clienteAuthModo, setClienteAuthModo] = useState<'cadastro' | 'login'>('cadastro');
   const [clienteAuthMensagem, setClienteAuthMensagem] = useState<string | null>(null);
+  const [totalAoVivo, setTotalAoVivo] = useState(0);
+  const [contagemPorCampeonato, setContagemPorCampeonato] = useState<
+    Record<number, { total: number; aoVivo: number }>
+  >({});
+
+  useEffect(() => {
+    const fetchAoVivo = () => {
+      fetch('/api/jogos-ao-vivo')
+        .then(r => r.json())
+        .then(d => {
+          if (typeof d.total === 'number') setTotalAoVivo(d.total);
+        })
+        .catch(() => {});
+    };
+    fetchAoVivo();
+    const t = setInterval(fetchAoVivo, 20000);
+    return () => clearInterval(t);
+  }, []);
+
+  useEffect(() => {
+    let ok = true;
+    const sync = () => {
+      ApiService.getJogos({ idEsporte: 102, filtro: 'todos' }).then(jogos => {
+        if (!ok) return;
+        const map: Record<number, { total: number; aoVivo: number }> = {};
+        for (const j of jogos) {
+          if (j.status === 'finalizado') continue;
+          if (!map[j.idCampeonato]) map[j.idCampeonato] = { total: 0, aoVivo: 0 };
+          map[j.idCampeonato].total++;
+          if (j.status === 'ao_vivo') map[j.idCampeonato].aoVivo++;
+        }
+        setContagemPorCampeonato(map);
+      }).catch(() => {});
+    };
+    sync();
+    const t = setInterval(sync, 45000);
+    return () => { ok = false; clearInterval(t); };
+  }, []);
 
   const loginCliente = useCallback((dados: SessaoCliente) => {
     setSessaoCliente(dados);
@@ -378,6 +421,8 @@ export const BettingProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setClienteAuthModo,
         clienteAuthMensagem,
         abrirCadastroCliente,
+        totalAoVivo,
+        contagemPorCampeonato,
       }}
     >
       {children}
