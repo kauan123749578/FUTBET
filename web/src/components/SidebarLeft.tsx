@@ -10,7 +10,8 @@ import {
   PlusCircle, 
   FileCheck2, 
   Search,
-  X
+  X,
+  Trophy
 } from 'lucide-react';
 
 export const CountryLogoBadge: React.FC<{ codigo: string; className?: string }> = ({ codigo, className = "w-5 h-5" }) => {
@@ -160,7 +161,7 @@ export const CountryLogoBadge: React.FC<{ codigo: string; className?: string }> 
         </svg>
       );
     default:
-      return <span className={`${className} flex items-center justify-center text-xs`}>⚽</span>;
+      return <Trophy className={`${className} text-amber-400 shrink-0`} strokeWidth={2.25} />;
   }
 };
 
@@ -294,7 +295,7 @@ export const SidebarLeft: React.FC = () => {
             className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-xs font-black bg-[#001D6E] text-white hover:bg-[#00268F] transition-all shadow"
           >
             <div className="flex items-center gap-2.5">
-              <span className="text-base">⚽</span>
+              <Trophy className="w-4 h-4 text-amber-400 shrink-0" />
               <span className="tracking-wide">Futebol</span>
             </div>
             {futebolAberto ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}

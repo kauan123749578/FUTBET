@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useBetting } from '../context/BettingContext';
 import { X, UserPlus, CheckCircle2, AlertTriangle, RefreshCw, LogIn } from 'lucide-react';
+import { PasswordInput } from './PasswordInput';
 
 export const ClientAuthModal: React.FC = () => {
   const {
@@ -169,15 +170,14 @@ export const ClientAuthModal: React.FC = () => {
 
           <div>
             <label className="block text-gray-400 text-xs font-bold mb-1.5">Senha</label>
-            <input
-              type="password"
+            <PasswordInput
               required
               minLength={4}
               autoComplete={clienteAuthModo === 'cadastro' ? 'new-password' : 'current-password'}
               placeholder="Mínimo 4 caracteres"
               value={senha}
               onChange={(e) => setSenha(e.target.value)}
-              className="w-full bg-[#070b13] border border-[#1e2b4a] rounded-xl px-3.5 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
+              className="bg-[#070b13] border border-[#1e2b4a] rounded-xl px-3.5 py-3 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
             />
           </div>
 

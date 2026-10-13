@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useBetting } from '../context/BettingContext';
 import { Lock, Crown, Briefcase, X, ArrowRight, ShieldCheck, AlertCircle } from 'lucide-react';
 import { ApiService } from '../services/api';
+import { PasswordInput } from './PasswordInput';
 
 export const OperadorLoginModal: React.FC = () => {
   const { modalLoginOperadorAberto, setModalLoginOperadorAberto, loginOperador } = useBetting();
@@ -134,13 +135,13 @@ export const OperadorLoginModal: React.FC = () => {
             <label className="block text-xs font-bold text-gray-300 mb-1.5">
               Senha
             </label>
-            <input
-              type="password"
+            <PasswordInput
               value={senha}
               onChange={(e) => setSenha(e.target.value)}
               placeholder="••••••••"
-              className="w-full bg-[#060B18] border border-[#1B2B50] rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-yellow-400 transition-colors"
+              className="bg-[#060B18] border border-[#1B2B50] rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-yellow-400 transition-colors"
               required
+              autoComplete="current-password"
             />
           </div>
 

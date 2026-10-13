@@ -1,16 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { PasswordInput } from './PasswordInput';
 import { ApiService } from '../services/api';
 import { BilheteAdmin, CambistaModel, ClienteModel, ConfiguracoesBanca, ResumoCaixaDono } from '../types/betting';
 import { 
   Home, 
-  Key, 
   Tv, 
   PlusCircle, 
   Wallet, 
   BarChart3, 
-  FileText, 
-  Lock, 
   Users, 
+  Crown,
   ListFilter, 
   Search, 
   Printer, 
@@ -34,7 +33,8 @@ import {
   Phone,
   Percent,
   CreditCard,
-  UserCheck
+  UserCheck,
+  Trophy
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useBetting } from '../context/BettingContext';
@@ -48,7 +48,7 @@ export const AdminPainelDesktopView: React.FC<AdminPainelProps> = ({ onVoltarSim
 
   // Sub-abas do menu lateral esquerdo
   const [menuAtivo, setMenuAtivo] = useState<
-    'cambistas' | 'clientes' | 'bilhetes' | 'inicio' | 'caixa' | 'relatorios' | 'conferir' | 'regulamento' | 'senha' | 'whatsapp'
+    'cambistas' | 'clientes' | 'bilhetes' | 'inicio' | 'caixa' | 'relatorios' | 'whatsapp'
   >('cambistas');
 
   const [sidebarMobileAberto, setSidebarMobileAberto] = useState(false);
@@ -95,6 +95,44 @@ export const AdminPainelDesktopView: React.FC<AdminPainelProps> = ({ onVoltarSim
     senha: '',
     saldo_inicial: 0
   });
+
+  const statsRelatorio = useMemo(() => {
+    const norm = (s: string) => (s || '').toLowerCase();
+    let abertos = 0;
+    let ganhos = 0;
+    let perdidos = 0;
+    let totalApostado = 0;
+    let exposicao = 0;
+    for (const b of bilhetes) {
+      totalApostado += b.valor_apostado || 0;
+      exposicao += b.retorno_potencial || b.retorno_possivel || 0;
+      const st = norm(b.status);
+      if (st.includes('ganh')) ganhos++;
+      else if (st.includes('perd')) perdidos++;
+      else abertos++;
+    }
+    const ticketMedio = bilhetes.length ? totalApostado / bilhetes.length : 0;
+    const porCambista = cambistas
+      .map(c => ({
+        nome: c.nome,
+        bilhetes: c.total_bilhetes ?? 0,
+        vendas: c.total_vendas ?? 0,
+      }))
+      .sort((a, b) => b.vendas - a.vendas)
+      .slice(0, 5);
+    return {
+      totalBilhetes: bilhetes.length,
+      abertos,
+      ganhos,
+      perdidos,
+      totalApostado,
+      exposicao,
+      ticketMedio,
+      totalClientes: clientes.length,
+      totalCambistas: cambistas.length,
+      porCambista,
+    };
+  }, [bilhetes, cambistas, clientes.length]);
 
   // Carregar dados
   const recarregarTodosDados = async () => {
@@ -261,7 +299,7 @@ export const AdminPainelDesktopView: React.FC<AdminPainelProps> = ({ onVoltarSim
             </button>
 
             <div className="flex items-center gap-2">
-              <span className="text-xl">⚽</span>
+              <img src="/logo.jpg" alt="" className="w-8 h-8 rounded-full object-cover ring-1 ring-white/20" />
               <span className="text-base font-black tracking-wide text-white">
                 futbet.com.br<span className="text-blue-400">/admin/gestao</span>
               </span>
@@ -354,21 +392,11 @@ export const AdminPainelDesktopView: React.FC<AdminPainelProps> = ({ onVoltarSim
             </button>
 
             <button
-              onClick={() => { setMenuAtivo('conferir'); setSidebarMobileAberto(false); }}
-              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-xs font-bold transition-all ${
-                menuAtivo === 'conferir' ? 'bg-[#00227B] text-white shadow' : 'text-gray-300 hover:text-white hover:bg-[#0E1A38]'
-              }`}
-            >
-              <Key className="w-4 h-4 text-yellow-400" />
-              <span>Recuperar PIN / Conferir</span>
-            </button>
-
-            <button
               onClick={() => { if (onVoltarSimulador) onVoltarSimulador(); }}
               className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-xs font-bold text-gray-300 hover:text-white hover:bg-[#0E1A38] transition-all"
             >
               <div className="flex items-center gap-3">
-                <span className="text-sm">⚽</span>
+                <Trophy className="w-4 h-4 text-amber-400" />
                 <span>Futebol</span>
               </div>
               <ChevronRight className="w-4 h-4 text-gray-500" />
@@ -400,26 +428,6 @@ export const AdminPainelDesktopView: React.FC<AdminPainelProps> = ({ onVoltarSim
             >
               <BarChart3 className="w-4 h-4 text-purple-400" />
               <span>Relatórios</span>
-            </button>
-
-            <button
-              onClick={() => { setMenuAtivo('regulamento'); setSidebarMobileAberto(false); }}
-              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-xs font-bold transition-all ${
-                menuAtivo === 'regulamento' ? 'bg-[#00227B] text-white shadow' : 'text-gray-300 hover:text-white hover:bg-[#0E1A38]'
-              }`}
-            >
-              <FileText className="w-4 h-4 text-blue-400" />
-              <span>Regulamento</span>
-            </button>
-
-            <button
-              onClick={() => { setMenuAtivo('senha'); setSidebarMobileAberto(false); }}
-              className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg text-xs font-bold transition-all ${
-                menuAtivo === 'senha' ? 'bg-[#00227B] text-white shadow' : 'text-gray-300 hover:text-white hover:bg-[#0E1A38]'
-              }`}
-            >
-              <Lock className="w-4 h-4 text-amber-400" />
-              <span>Mudar Senha</span>
             </button>
 
             {/* LISTA DE CLIENTES (COM DESTAQUE PARA ATENDER AO PEDIDO DO USUÁRIO) */}
@@ -500,17 +508,150 @@ export const AdminPainelDesktopView: React.FC<AdminPainelProps> = ({ onVoltarSim
 
         {/* CONTEÚDO PRINCIPAL (MAIN STAGE) */}
         <main className="flex-1 min-w-0 p-3 sm:p-6 overflow-y-auto">
-          {/* ============================================================== */}
-          {/* ABA: GERENCIAR CAMBISTAS (TELA PRINCIPAL DA FOTO 1 DO USUÁRIO) */}
-          {/* ============================================================== */}
+          {menuAtivo === 'inicio' && (
+            <div className="space-y-5">
+              <h2 className="text-xl font-black text-white flex items-center gap-2">
+                <Home className="w-6 h-6 text-blue-400" />
+                Visão geral da banca
+              </h2>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                <div className="bg-[#050B1A] border border-[#14234A] rounded-xl p-4">
+                  <p className="text-[10px] uppercase text-gray-500 font-bold">Bilhetes</p>
+                  <p className="text-2xl font-black text-white font-mono mt-1">{statsRelatorio.totalBilhetes}</p>
+                </div>
+                <div className="bg-[#050B1A] border border-[#14234A] rounded-xl p-4">
+                  <p className="text-[10px] uppercase text-gray-500 font-bold">Clientes</p>
+                  <p className="text-2xl font-black text-emerald-400 font-mono mt-1">{statsRelatorio.totalClientes}</p>
+                </div>
+                <div className="bg-[#050B1A] border border-[#14234A] rounded-xl p-4">
+                  <p className="text-[10px] uppercase text-gray-500 font-bold">Cambistas</p>
+                  <p className="text-2xl font-black text-blue-300 font-mono mt-1">{statsRelatorio.totalCambistas}</p>
+                </div>
+                <div className="bg-[#050B1A] border border-[#14234A] rounded-xl p-4">
+                  <p className="text-[10px] uppercase text-gray-500 font-bold">Volume apostado</p>
+                  <p className="text-xl font-black text-yellow-400 font-mono mt-1">
+                    R$ {statsRelatorio.totalApostado.toFixed(2)}
+                  </p>
+                </div>
+              </div>
+              <p className="text-xs text-gray-500">
+                Use o menu para cambistas, clientes, bilhetes, caixa e relatórios detalhados.
+              </p>
+            </div>
+          )}
+
+          {menuAtivo === 'relatorios' && (
+            <div className="space-y-5">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <h2 className="text-xl font-black text-white flex items-center gap-2">
+                  <BarChart3 className="w-6 h-6 text-purple-400" />
+                  Relatórios da banca
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => recarregarTodosDados()}
+                  className="inline-flex items-center gap-2 text-xs font-bold text-gray-300 border border-[#192B5A] px-3 py-2 rounded-lg hover:bg-[#0E1A38]"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${carregando ? 'animate-spin' : ''}`} />
+                  Atualizar
+                </button>
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="bg-[#050B1A] border border-yellow-500/30 rounded-xl p-4">
+                  <p className="text-[10px] uppercase text-yellow-500/80 font-bold">Em aberto</p>
+                  <p className="text-3xl font-black text-yellow-300 font-mono">{statsRelatorio.abertos}</p>
+                </div>
+                <div className="bg-[#050B1A] border border-emerald-500/30 rounded-xl p-4">
+                  <p className="text-[10px] uppercase text-emerald-500/80 font-bold">Ganhos</p>
+                  <p className="text-3xl font-black text-emerald-400 font-mono">{statsRelatorio.ganhos}</p>
+                </div>
+                <div className="bg-[#050B1A] border border-red-500/30 rounded-xl p-4">
+                  <p className="text-[10px] uppercase text-red-500/80 font-bold">Perdidos</p>
+                  <p className="text-3xl font-black text-red-400 font-mono">{statsRelatorio.perdidos}</p>
+                </div>
+                <div className="bg-[#050B1A] border border-[#14234A] rounded-xl p-4">
+                  <p className="text-[10px] uppercase text-gray-500 font-bold">Ticket médio</p>
+                  <p className="text-xl font-black text-white font-mono">R$ {statsRelatorio.ticketMedio.toFixed(2)}</p>
+                </div>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="bg-[#050B1A] border border-[#14234A] rounded-2xl p-5">
+                  <h3 className="text-sm font-bold text-gray-300 mb-3">Financeiro (bilhetes)</h3>
+                  <ul className="space-y-2 text-sm">
+                    <li className="flex justify-between">
+                      <span className="text-gray-500">Total apostado</span>
+                      <span className="font-mono font-bold text-white">R$ {statsRelatorio.totalApostado.toFixed(2)}</span>
+                    </li>
+                    <li className="flex justify-between">
+                      <span className="text-gray-500">Retorno potencial (exposição)</span>
+                      <span className="font-mono font-bold text-emerald-400">R$ {statsRelatorio.exposicao.toFixed(2)}</span>
+                    </li>
+                  </ul>
+                </div>
+                <div className="bg-[#050B1A] border border-[#14234A] rounded-2xl p-5">
+                  <h3 className="text-sm font-bold text-gray-300 mb-3">Top cambistas (vendas)</h3>
+                  {statsRelatorio.porCambista.length === 0 ? (
+                    <p className="text-xs text-gray-500">Nenhum cambista cadastrado ainda.</p>
+                  ) : (
+                    <ul className="space-y-2">
+                      {statsRelatorio.porCambista.map(c => (
+                        <li key={c.nome} className="flex justify-between text-xs">
+                          <span className="text-gray-300 truncate pr-2">{c.nome}</span>
+                          <span className="font-mono text-emerald-400 shrink-0">R$ {(c.vendas || 0).toFixed(2)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </div>
+
+              <div className="bg-[#050B1A] border border-[#14234A] rounded-2xl overflow-hidden">
+                <div className="px-4 py-3 border-b border-[#14234A] text-xs font-bold text-gray-400 uppercase">
+                  Últimos bilhetes registrados
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead>
+                      <tr className="bg-[#0B1530] text-gray-400">
+                        <th className="p-3">Código</th>
+                        <th className="p-3">Cliente</th>
+                        <th className="p-3">Valor</th>
+                        <th className="p-3">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#101D3E]">
+                      {bilhetes.slice(0, 8).map(b => (
+                        <tr key={b.codigo} className="hover:bg-[#0B1530]/50">
+                          <td className="p-3 font-mono text-yellow-400">{b.codigo}</td>
+                          <td className="p-3 text-gray-300">{b.cliente_nome || b.cliente || '—'}</td>
+                          <td className="p-3 font-mono">R$ {b.valor_apostado.toFixed(2)}</td>
+                          <td className="p-3 text-gray-400">{b.status}</td>
+                        </tr>
+                      ))}
+                      {bilhetes.length === 0 && (
+                        <tr>
+                          <td colSpan={4} className="p-6 text-center text-gray-500">
+                            Nenhum bilhete no sistema ainda.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+
           {menuAtivo === 'cambistas' && (
             <div className="space-y-6">
               {/* Header da Aba */}
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                   <div className="flex items-center gap-2">
-                    <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-black px-2 py-0.5 rounded uppercase">
-                      👑 EXCLUSIVO DO DONO
+                    <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] font-black px-2 py-0.5 rounded uppercase inline-flex items-center gap-1">
+                      <Crown className="w-3 h-3" /> EXCLUSIVO DO DONO
                     </span>
                     <h1 className="text-xl sm:text-2xl font-black text-white flex items-center gap-2">
                       <ShieldCheck className="w-6 h-6 text-emerald-400" />
@@ -985,12 +1126,11 @@ export const AdminPainelDesktopView: React.FC<AdminPainelProps> = ({ onVoltarSim
 
                 <div>
                   <label className="block text-xs font-bold text-gray-300 mb-1">Nova Senha (opcional)</label>
-                  <input
-                    type="password"
+                  <PasswordInput
                     placeholder="Deixe em branco para manter"
                     value={formCambista.senha}
                     onChange={(e) => setFormCambista({ ...formCambista, senha: e.target.value })}
-                    className="w-full bg-[#060B18] border border-[#1B2B50] rounded-xl px-3.5 py-2.5 text-sm text-white"
+                    className="bg-[#060B18] border border-[#1B2B50] rounded-xl px-3.5 py-2.5 text-sm text-white"
                   />
                 </div>
               </div>
@@ -1079,12 +1219,11 @@ export const AdminPainelDesktopView: React.FC<AdminPainelProps> = ({ onVoltarSim
 
                 <div>
                   <label className="block text-xs font-bold text-gray-300 mb-1">Senha de Acesso</label>
-                  <input
-                    type="password"
+                  <PasswordInput
                     placeholder="Senha provisória"
                     value={formCambista.senha}
                     onChange={(e) => setFormCambista({ ...formCambista, senha: e.target.value })}
-                    className="w-full bg-[#060B18] border border-[#1B2B50] rounded-xl px-3.5 py-2.5 text-sm text-white"
+                    className="bg-[#060B18] border border-[#1B2B50] rounded-xl px-3.5 py-2.5 text-sm text-white"
                     required
                   />
                 </div>
@@ -1193,12 +1332,11 @@ export const AdminPainelDesktopView: React.FC<AdminPainelProps> = ({ onVoltarSim
 
               <div>
                 <label className="block text-xs font-bold text-gray-300 mb-1">Senha de Acesso do Cliente</label>
-                <input
-                  type="password"
+                <PasswordInput
                   placeholder="Senha para o cliente entrar"
                   value={formCliente.senha}
                   onChange={(e) => setFormCliente({ ...formCliente, senha: e.target.value })}
-                  className="w-full bg-[#060B18] border border-[#1B2B50] rounded-xl px-3.5 py-2.5 text-sm text-white"
+                  className="bg-[#060B18] border border-[#1B2B50] rounded-xl px-3.5 py-2.5 text-sm text-white"
                   required
                 />
               </div>

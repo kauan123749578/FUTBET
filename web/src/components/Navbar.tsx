@@ -10,6 +10,7 @@ import {
   Crown,
   Briefcase,
   Menu,
+  Trophy,
 } from 'lucide-react';
 
 const navLinkClass = (active: boolean) =>
@@ -186,7 +187,7 @@ export const Navbar: React.FC = () => {
             abaAtiva === 'apostador' ? 'text-white' : 'hover:text-gray-200'
           }`}
         >
-          <span className="text-base">⚽</span>
+          <Trophy className="w-4 h-4" />
           <span>Apostas</span>
         </button>
         <button
