@@ -3,14 +3,9 @@ import { useBetting } from '../context/BettingContext';
 import { 
   Ticket, 
   Search, 
-  ShieldCheck, 
   FileText, 
   Smartphone, 
   UserPlus, 
-  X, 
-  CheckCircle2, 
-  AlertTriangle, 
-  RefreshCw,
   Lock,
   LogOut,
   Crown,
@@ -30,24 +25,11 @@ export const Navbar: React.FC = () => {
     logoutOperador,
     sidebarMobileAberto,
     setSidebarMobileAberto,
-    modalCadastroClienteAberto,
-    setModalCadastroClienteAberto
+    sessaoCliente,
+    logoutCliente,
+    abrirCadastroCliente,
   } = useBetting();
-  const [modalClienteAberto, setModalClienteAberto] = useState(false);
-  const [modoCadastro, setModoCadastro] = useState<'cadastro' | 'login'>('cadastro');
-  const [nome, setNome] = useState('');
-  const [telefone, setTelefone] = useState('');
-  const [senha, setSenha] = useState('');
-  const [feedback, setFeedback] = useState<{tipo: 'sucesso'|'erro'; texto: string}|null>(null);
-  const [carregando, setCarregando] = useState(false);
   const [totalAoVivo, setTotalAoVivo] = useState(0);
-
-  const isModalAberto = modalClienteAberto || modalCadastroClienteAberto;
-  const fecharModal = () => {
-    setModalClienteAberto(false);
-    setModalCadastroClienteAberto(false);
-    setFeedback(null);
-  };
 
   React.useEffect(() => {
     const fetchAoVivo = () => {
@@ -62,31 +44,6 @@ export const Navbar: React.FC = () => {
     const interval = setInterval(fetchAoVivo, 20000);
     return () => clearInterval(interval);
   }, []);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setCarregando(true);
-    setFeedback(null);
-    try {
-      const endpoint = modoCadastro === 'cadastro' ? '/api/clientes/cadastro' : '/api/clientes/login';
-      const body = modoCadastro === 'cadastro'
-        ? { nome: nome.trim(), telefone: telefone.trim(), senha: senha.trim() }
-        : { telefone: telefone.trim(), senha: senha.trim() };
-      const resp = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      });
-      const data = await resp.json();
-      if (!resp.ok) {
-        setFeedback({ tipo: 'erro', texto: data.detail || 'Erro ao processar.' });
-      } else {
-        setFeedback({ tipo: 'sucesso', texto: data.message || 'Sucesso!' });
-        setTimeout(() => { fecharModal(); setNome(''); setTelefone(''); setSenha(''); }, 2000);
-      }
-    } catch { setFeedback({ tipo: 'erro', texto: 'Erro de conexão.' }); }
-    finally { setCarregando(false); }
-  };
 
   return (
     <>
@@ -220,19 +177,32 @@ export const Navbar: React.FC = () => {
               )}
             </button>
 
-            <button
-              onClick={() => {
-                setModoCadastro('cadastro');
-                setModalClienteAberto(true);
-                setModalCadastroClienteAberto(true);
-              }}
-              className="flex items-center gap-1.5 bg-yellow-400 hover:bg-yellow-300 text-blue-950 px-2.5 sm:px-3 py-1.5 rounded-md text-xs font-black transition-all shadow active:scale-95 animate-pulse hover:animate-none"
-              title="Criar conta ou entrar"
-              id="btn-cadastrar-cliente"
-            >
-              <UserPlus className="w-3.5 h-3.5" />
-              <span>Cadastrar</span>
-            </button>
+            {sessaoCliente ? (
+              <div className="flex items-center gap-1 bg-[#001552] border border-[#0A267A] px-2 py-1.5 rounded-md text-xs max-w-[140px]">
+                <span className="text-yellow-300 font-bold truncate" title={sessaoCliente.nome}>
+                  {sessaoCliente.nome.split(' ')[0]}
+                </span>
+                <button
+                  type="button"
+                  onClick={logoutCliente}
+                  className="text-red-400 hover:text-red-300 p-0.5 shrink-0"
+                  title="Sair da conta"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => abrirCadastroCliente('cadastro')}
+                className="flex items-center gap-1.5 bg-yellow-400 hover:bg-yellow-300 text-blue-950 px-2.5 sm:px-3 py-1.5 rounded-md text-xs font-black transition-all shadow active:scale-95"
+                title="Criar conta ou entrar"
+                id="btn-cadastrar-cliente"
+              >
+                <UserPlus className="w-3.5 h-3.5" />
+                <span>Entrar</span>
+              </button>
+            )}
 
             <a
               href="https://wa.me/"
@@ -310,15 +280,12 @@ export const Navbar: React.FC = () => {
       </button>
 
       <button
-        onClick={() => {
-          setModoCadastro('cadastro');
-          setModalClienteAberto(true);
-          setModalCadastroClienteAberto(true);
-        }}
+        type="button"
+        onClick={() => abrirCadastroCliente(sessaoCliente ? 'login' : 'cadastro')}
         className="flex flex-col items-center gap-0.5 p-1 rounded-lg text-[10px] font-bold text-yellow-400 hover:text-yellow-300"
       >
         <UserPlus className="w-4 h-4 text-yellow-400" />
-        <span>Cadastrar</span>
+        <span>{sessaoCliente ? 'Conta' : 'Entrar'}</span>
       </button>
 
       <button
@@ -337,60 +304,6 @@ export const Navbar: React.FC = () => {
         )}
       </button>
     </div>
-
-    {/* Modal de Cadastro/Login de Cliente */}
-    {isModalAberto && (
-      <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-        <div className="bg-[#0D1424] border border-[#1B2742] rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-          <div className="bg-gradient-to-r from-[#001D6E] to-[#0A38B8] px-5 py-4 text-white">
-            <div className="flex items-center justify-between mb-3">
-              <div>
-                <h3 className="font-black text-base">⚽ FUTBET</h3>
-                <p className="text-[11px] text-blue-200">{modoCadastro === 'cadastro' ? 'Criar sua conta de apostador' : 'Acessar sua conta'}</p>
-              </div>
-              <button onClick={fecharModal} className="text-white/70 hover:text-white p-1 rounded-lg hover:bg-white/10">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="flex bg-white/10 p-0.5 rounded-lg">
-              <button onClick={() => setModoCadastro('cadastro')} className={`flex-1 py-1.5 rounded text-xs font-bold transition-all ${modoCadastro === 'cadastro' ? 'bg-white text-blue-900 shadow' : 'text-white/70'}`}>Criar Conta</button>
-              <button onClick={() => setModoCadastro('login')} className={`flex-1 py-1.5 rounded text-xs font-bold transition-all ${modoCadastro === 'login' ? 'bg-white text-blue-900 shadow' : 'text-white/70'}`}>Já Tenho Conta</button>
-            </div>
-          </div>
-          <form onSubmit={handleSubmit} className="p-5 space-y-3">
-            {modoCadastro === 'cadastro' && (
-              <div>
-                <label className="block text-gray-400 text-xs font-bold mb-1">Nome Completo</label>
-                <input type="text" required placeholder="Ex: João Silva" value={nome} onChange={e => setNome(e.target.value)}
-                  className="w-full bg-[#070B13] border border-[#1E2B4A] rounded-lg px-3 py-2.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-blue-500" />
-              </div>
-            )}
-            <div>
-              <label className="block text-gray-400 text-xs font-bold mb-1">WhatsApp (com DDD)</label>
-              <input type="tel" required placeholder="Ex: (11) 98765-4321" value={telefone} onChange={e => setTelefone(e.target.value)}
-                className="w-full bg-[#070B13] border border-[#1E2B4A] rounded-lg px-3 py-2.5 text-xs text-white placeholder-gray-500 font-mono focus:outline-none focus:border-blue-500" />
-            </div>
-            <div>
-              <label className="block text-gray-400 text-xs font-bold mb-1">Senha</label>
-              <input type="password" required placeholder="Mínimo 6 caracteres" value={senha} onChange={e => setSenha(e.target.value)}
-                className="w-full bg-[#070B13] border border-[#1E2B4A] rounded-lg px-3 py-2.5 text-xs text-white placeholder-gray-500 focus:outline-none focus:border-blue-500" />
-            </div>
-            {feedback && (
-              <div className={`p-2.5 rounded-lg text-xs font-bold flex items-center gap-2 ${feedback.tipo === 'sucesso' ? 'bg-emerald-900/50 text-emerald-300 border border-emerald-700' : 'bg-red-900/50 text-red-300 border border-red-700'}`}>
-                {feedback.tipo === 'sucesso' ? <CheckCircle2 className="w-4 h-4 shrink-0" /> : <AlertTriangle className="w-4 h-4 shrink-0" />}
-                <span>{feedback.texto}</span>
-              </div>
-            )}
-            <button type="submit" disabled={carregando}
-              className="w-full bg-yellow-400 hover:bg-yellow-300 disabled:opacity-60 text-blue-950 font-black py-2.5 rounded-lg text-sm transition-colors flex items-center justify-center gap-2">
-              {carregando ? <><RefreshCw className="w-4 h-4 animate-spin" /> Processando...</> :
-                modoCadastro === 'cadastro' ? <><UserPlus className="w-4 h-4" /> Criar Minha Conta</> :
-                <><CheckCircle2 className="w-4 h-4" /> Entrar</>}
-            </button>
-          </form>
-        </div>
-      </div>
-    )}
     </>
   );
 };

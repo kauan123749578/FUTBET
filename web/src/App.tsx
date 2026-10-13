@@ -12,6 +12,7 @@ import { RegulationView } from './components/RegulationView';
 import { AdminPainelDesktopView } from './components/AdminPainelDesktopView';
 import { CambistaPainelView } from './components/CambistaPainelView';
 import { OperadorLoginModal } from './components/OperadorLoginModal';
+import { ClientAuthModal } from './components/ClientAuthModal';
 
 const MainLayout: React.FC = () => {
   const { abaAtiva, setAbaAtiva } = useBetting();
@@ -23,6 +24,7 @@ const MainLayout: React.FC = () => {
         <CambistaPainelView onVoltarSimulador={() => setAbaAtiva('apostador')} />
         <TicketReceiptModal />
         <OperadorLoginModal />
+        <ClientAuthModal />
       </>
     );
   }
@@ -34,6 +36,7 @@ const MainLayout: React.FC = () => {
         <AdminPainelDesktopView onVoltarSimulador={() => setAbaAtiva('apostador')} />
         <TicketReceiptModal />
         <OperadorLoginModal />
+        <ClientAuthModal />
       </>
     );
   }
@@ -70,6 +73,7 @@ const MainLayout: React.FC = () => {
       <AdditionalMarketsModal />
       <TicketReceiptModal />
       <OperadorLoginModal />
+      <ClientAuthModal />
     </div>
   );
 };

@@ -105,15 +105,18 @@ def login_operador(dados: LoginOperadorSchema, db: Session = Depends(get_db)):
     u = dados.usuario.strip()
     p = dados.senha.strip()
 
-    cfg_senha = db.query(Configuracao).filter(Configuracao.chave == "senha_admin").first()
-    senha_admin = cfg_senha.valor if cfg_senha else "admin123"
+    admin_user = (os.getenv("ADMIN_USUARIO") or os.getenv("ADMIN_USERNAME") or "admin").strip().lower()
+    admin_pass = (os.getenv("ADMIN_SENHA") or os.getenv("ADMIN_PASSWORD") or "").strip()
+    if not admin_pass:
+        cfg_senha = db.query(Configuracao).filter(Configuracao.chave == "senha_admin").first()
+        admin_pass = (cfg_senha.valor if cfg_senha else "admin123").strip()
 
-    if (u.lower() == "admin" or u.lower() == "dono") and p == senha_admin:
+    if u.lower() == admin_user and p == admin_pass:
         return {
             "success": True,
             "role": "dono",
             "nome": "Dono da Banca (Administrador)",
-            "usuario": "admin",
+            "usuario": admin_user,
             "message": "Autenticado como Dono da Banca!"
         }
 

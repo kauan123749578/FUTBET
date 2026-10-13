@@ -144,11 +144,16 @@ export const OperadorLoginModal: React.FC = () => {
             />
           </div>
 
-          <div className="bg-[#060B18]/60 p-2.5 rounded-lg border border-[#162344] text-[11px] text-gray-400 flex items-center justify-between">
-            <span>Dica de acesso teste:</span>
-            <span className="font-mono text-yellow-300 font-bold">
-              {tipoOperador === 'dono' ? 'admin / admin123' : 'usuário cadastrado no painel'}
-            </span>
+          <div className="bg-[#060B18]/60 p-2.5 rounded-lg border border-[#162344] text-[11px] text-gray-400 text-center leading-snug">
+            {tipoOperador === 'dono' ? (
+              <>
+                Dono: use o usuário e a senha definidos em{' '}
+                <span className="text-yellow-300 font-bold">ADMIN_USUARIO</span> e{' '}
+                <span className="text-yellow-300 font-bold">ADMIN_SENHA</span> no Railway.
+              </>
+            ) : (
+              <>Cambista: login e senha criados pelo dono no painel admin.</>
+            )}
           </div>
 
           <button

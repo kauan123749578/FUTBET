@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
-import { ItemCupom, TipoAposta, Bilhete, FiltrosAtivos, Jogo, SessaoOperador } from '../types/betting';
+import { ItemCupom, TipoAposta, Bilhete, FiltrosAtivos, Jogo, SessaoOperador, SessaoCliente } from '../types/betting';
 import { ApiService } from '../services/api';
 
 interface BettingContextType {
@@ -29,7 +29,7 @@ interface BettingContextType {
   bilheteGerado: Bilhete | null;
   modalBilheteAberto: boolean;
   isSimulando: boolean;
-  simularAposta: (nome: string, telefone?: string) => Promise<Bilhete | null>;
+  simularAposta: () => Promise<Bilhete | null>;
   fecharModalBilhete: voidCallback;
   abrirModalComBilhete: (b: Bilhete) => void;
 
@@ -52,9 +52,16 @@ interface BettingContextType {
   sidebarMobileAberto: boolean;
   setSidebarMobileAberto: (aberto: boolean) => void;
 
-  // Modal de Cadastro de Cliente
+  // Conta do apostador (obrigatória para apostar)
+  sessaoCliente: SessaoCliente | null;
+  loginCliente: (dados: SessaoCliente) => void;
+  logoutCliente: voidCallback;
   modalCadastroClienteAberto: boolean;
   setModalCadastroClienteAberto: (aberto: boolean) => void;
+  clienteAuthModo: 'cadastro' | 'login';
+  setClienteAuthModo: (modo: 'cadastro' | 'login') => void;
+  clienteAuthMensagem: string | null;
+  abrirCadastroCliente: (modo?: 'cadastro' | 'login', mensagem?: string) => void;
 }
 
 type voidCallback = () => void;
@@ -99,7 +106,36 @@ export const BettingProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
   const [modalLoginOperadorAberto, setModalLoginOperadorAberto] = useState(false);
   const [sidebarMobileAberto, setSidebarMobileAberto] = useState(false);
+  const [sessaoCliente, setSessaoCliente] = useState<SessaoCliente | null>(() => {
+    try {
+      const s = localStorage.getItem('futbet_sessao_cliente_v1');
+      return s ? JSON.parse(s) : null;
+    } catch {
+      return null;
+    }
+  });
+
   const [modalCadastroClienteAberto, setModalCadastroClienteAberto] = useState(false);
+  const [clienteAuthModo, setClienteAuthModo] = useState<'cadastro' | 'login'>('cadastro');
+  const [clienteAuthMensagem, setClienteAuthMensagem] = useState<string | null>(null);
+
+  const loginCliente = useCallback((dados: SessaoCliente) => {
+    setSessaoCliente(dados);
+    localStorage.setItem('futbet_sessao_cliente_v1', JSON.stringify(dados));
+    setModalCadastroClienteAberto(false);
+    setClienteAuthMensagem(null);
+  }, []);
+
+  const logoutCliente = useCallback(() => {
+    setSessaoCliente(null);
+    localStorage.removeItem('futbet_sessao_cliente_v1');
+  }, []);
+
+  const abrirCadastroCliente = useCallback((modo: 'cadastro' | 'login' = 'cadastro', mensagem?: string) => {
+    setClienteAuthModo(modo);
+    setClienteAuthMensagem(mensagem ?? null);
+    setModalCadastroClienteAberto(true);
+  }, []);
 
   const loginOperador = useCallback((dados: SessaoOperador) => {
     setSessaoOperador(dados);
@@ -197,7 +233,6 @@ export const BettingProvider: React.FC<{ children: React.ReactNode }> = ({ child
   // Adicionar ou remover seleção (Toggle da Odd)
   const toggleSelecao = useCallback((item: ItemCupom) => {
     setItensCupom(prev => {
-      // Se já existe exatamente o mesmo palpite no jogo, remove (desmarca)
       const jaExisteMesmoPalpite = prev.some(
         i => i.jogoId === item.jogoId && i.mercadoId === item.mercadoId && i.palpiteRotulo === item.palpiteRotulo
       );
@@ -208,14 +243,23 @@ export const BettingProvider: React.FC<{ children: React.ReactNode }> = ({ child
         );
       }
 
-      // Se já existe outro palpite no mesmo mercado deste jogo, substitui (ex: trocou Casa por Fora)
+      if (!sessaoCliente) {
+        queueMicrotask(() => {
+          abrirCadastroCliente(
+            'cadastro',
+            'Para adicionar palpites ao cupom, crie sua conta ou faça login.'
+          );
+        });
+        return prev;
+      }
+
       const filtrado = prev.filter(
         i => !(i.jogoId === item.jogoId && i.mercadoId === item.mercadoId)
       );
 
       return [...filtrado, item];
     });
-  }, []);
+  }, [sessaoCliente, abrirCadastroCliente]);
 
   const removerItem = useCallback((jogoId: string | number, mercadoId: string) => {
     setItensCupom(prev => prev.filter(i => !(i.jogoId === jogoId && i.mercadoId === mercadoId)));
@@ -252,13 +296,17 @@ export const BettingProvider: React.FC<{ children: React.ReactNode }> = ({ child
   }, [cotacaoTotal, valorApostado, itensCupom.length]);
 
   // Simular / Gerar Pré-Bilhete
-  const simularAposta = useCallback(async (nome: string, telefone?: string) => {
+  const simularAposta = useCallback(async () => {
+    if (!sessaoCliente) {
+      abrirCadastroCliente('login', 'Entre na sua conta para gerar o bilhete.');
+      return null;
+    }
     if (itensCupom.length === 0 || valorApostado <= 0) return null;
     setIsSimulando(true);
     try {
       const bilhete = await ApiService.simularBilhete({
-        apostadorNome: nome.trim() || 'Apostador Anônimo',
-        apostadorTelefone: telefone,
+        apostadorNome: sessaoCliente.nome,
+        apostadorTelefone: sessaoCliente.telefone,
         itens: itensCupom,
         tipo: tipoAposta,
         valorApostado,
@@ -272,7 +320,7 @@ export const BettingProvider: React.FC<{ children: React.ReactNode }> = ({ child
     } finally {
       setIsSimulando(false);
     }
-  }, [itensCupom, tipoAposta, valorApostado, cotacaoTotal, retornoPotencial, limparCupom]);
+  }, [itensCupom, tipoAposta, valorApostado, cotacaoTotal, retornoPotencial, limparCupom, sessaoCliente, abrirCadastroCliente]);
 
   const fecharModalBilhete = useCallback(() => {
     setModalBilheteAberto(false);
@@ -321,8 +369,15 @@ export const BettingProvider: React.FC<{ children: React.ReactNode }> = ({ child
         logoutOperador,
         sidebarMobileAberto,
         setSidebarMobileAberto,
+        sessaoCliente,
+        loginCliente,
+        logoutCliente,
         modalCadastroClienteAberto,
-        setModalCadastroClienteAberto
+        setModalCadastroClienteAberto,
+        clienteAuthModo,
+        setClienteAuthModo,
+        clienteAuthMensagem,
+        abrirCadastroCliente,
       }}
     >
       {children}

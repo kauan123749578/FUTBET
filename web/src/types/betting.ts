@@ -216,3 +216,9 @@ export interface SessaoOperador {
   comissao_pct?: number;
   limite_credito?: number;
 }
+
+export interface SessaoCliente {
+  id?: number;
+  nome: string;
+  telefone: string;
+}
