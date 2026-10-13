@@ -56,9 +56,11 @@ export const Navbar: React.FC = () => {
             }} 
             className="flex items-center gap-2 text-left focus:outline-none group"
           >
-            <div className="w-9 h-9 rounded-full bg-white flex items-center justify-center shadow">
-              <span className="text-xl">⚽</span>
-            </div>
+            <img
+              src="/logo.jpg"
+              alt="FUTBET"
+              className="w-9 h-9 sm:w-10 sm:h-10 rounded-full object-cover ring-2 ring-white/20 shadow-md shrink-0"
+            />
             <div>
               <span className="text-lg sm:text-xl font-black tracking-wider text-white group-hover:text-yellow-400 transition-colors uppercase">
                 FUT<span className="text-yellow-400">BET</span>

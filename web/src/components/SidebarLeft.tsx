@@ -10,7 +10,6 @@ import {
   PlusCircle, 
   FileCheck2, 
   Search,
-  Lock,
   X
 } from 'lucide-react';
 
@@ -185,8 +184,6 @@ export const SidebarLeft: React.FC = () => {
     setDataFiltro, 
     abaAtiva, 
     setAbaAtiva,
-    sessaoOperador,
-    setModalLoginOperadorAberto,
     sidebarMobileAberto,
     setSidebarMobileAberto,
     totalAoVivo,
@@ -253,7 +250,7 @@ export const SidebarLeft: React.FC = () => {
       {isMobile && (
         <div className="p-3.5 bg-[#001552] border-b border-[#0D2D8F] flex items-center justify-between text-white shadow-md">
           <div className="flex items-center gap-2">
-            <span className="text-xl">⚽</span>
+            <img src="/logo.jpg" alt="" className="w-8 h-8 rounded-full object-cover ring-2 ring-white/20" />
             <div>
               <span className="font-black text-sm uppercase tracking-wider block">Menu & Ligas</span>
               <span className="text-[10px] text-blue-200">Navegue pelas competições</span>
@@ -513,37 +510,6 @@ export const SidebarLeft: React.FC = () => {
               </button>
             </div>
           </form>
-        </div>
-
-        {/* Acesso Seguro a Operadores */}
-        <div className="pt-2">
-          {sessaoOperador ? (
-            <button
-              onClick={() => {
-                setAbaAtiva(sessaoOperador.role === 'dono' ? 'admin' : 'cambista');
-                if (isMobile) setSidebarMobileAberto(false);
-              }}
-              className={`w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-black uppercase tracking-wider transition-all shadow-md ${
-                abaAtiva === 'admin' || abaAtiva === 'cambista'
-                  ? 'bg-yellow-400 text-blue-950 font-black ring-2 ring-yellow-300'
-                  : 'bg-gradient-to-r from-blue-700 to-indigo-800 hover:from-blue-600 hover:to-indigo-700 text-white border border-blue-400/40'
-              }`}
-            >
-              <span>{sessaoOperador.role === 'dono' ? '👑 PAINEL DONO' : '💼 MEU PAINEL CAMBISTA'}</span>
-            </button>
-          ) : (
-            <button
-              onClick={() => {
-                setModalLoginOperadorAberto(true);
-                if (isMobile) setSidebarMobileAberto(false);
-              }}
-              className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-lg text-xs font-semibold text-gray-400 hover:text-white hover:bg-white/5 border border-white/10 transition-all"
-              title="Acesso seguro com login e senha para Cambistas e Dono da Banca"
-            >
-              <Lock className="w-3.5 h-3.5 text-yellow-400" />
-              <span>Acesso Operador & Cambista</span>
-            </button>
-          )}
         </div>
       </div>
 
