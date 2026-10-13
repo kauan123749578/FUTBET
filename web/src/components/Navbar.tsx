@@ -12,6 +12,7 @@ import {
   Briefcase,
   Menu
 } from 'lucide-react';
+import { WHATSAPP_SUPORTE_NUM } from '../services/api';
 
 export const Navbar: React.FC = () => {
   const { 
@@ -191,11 +192,11 @@ export const Navbar: React.FC = () => {
             )}
 
             <a
-              href="https://wa.me/"
+              href={`https://wa.me/${WHATSAPP_SUPORTE_NUM}?text=${encodeURIComponent('Olá! Preciso de suporte FUTBET.')}`}
               target="_blank"
               rel="noreferrer"
-              className="hidden sm:flex items-center gap-1 bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1.5 rounded-md text-xs font-semibold transition-colors"
-              title="Suporte via WhatsApp"
+              className="flex items-center gap-1 bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1.5 rounded-md text-xs font-semibold transition-colors"
+              title="Suporte WhatsApp (21) 99080-8924"
             >
               <Smartphone className="w-3.5 h-3.5" />
               <span>WhatsApp</span>

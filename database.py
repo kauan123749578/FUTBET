@@ -105,7 +105,7 @@ def init_db():
     db = SessionLocal()
 
     configs_padrao = {
-        "whatsapp_dono": "5511999999999",
+        "whatsapp_dono": "5521990808924",
         "chave_pix": "11999999999",
         "nome_banca": "FUTBET",
         "comissao_padrao": "10.0",

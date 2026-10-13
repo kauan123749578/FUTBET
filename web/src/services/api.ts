@@ -16,6 +16,9 @@ const STORAGE_BILHETES_ADMIN_KEY = 'futbet_bilhetes_v4';
 const STORAGE_CONFIGS_KEY = 'futbet_configs_v4';
 const STORAGE_CAMBISTAS_KEY = 'futbet_cambistas_v4';
 
+/** Suporte / WhatsApp da banca (DDI 55 + DDD 21). */
+export const WHATSAPP_SUPORTE_NUM = '5521990808924';
+
 export const FUTEBOL_ESPORTE: Esporte = { id: 102, nome: 'Futebol', icone: '⚽', totalJogos: 0 };
 
 /** Ligas com jogos reais na API ESPN (Brasil + CONMEBOL). */
@@ -27,7 +30,7 @@ export const CAMPEONATOS_FUTEBOL: Campeonato[] = [
 ];
 
 export const CONFIGS_PADRAO: ConfiguracoesBanca = {
-  whatsapp_dono: '5511999999999',
+  whatsapp_dono: WHATSAPP_SUPORTE_NUM,
   chave_pix: '11999999999',
   nome_banca: 'FUTBET',
   comissao_padrao: '10.0',
