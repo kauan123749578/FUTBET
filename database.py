@@ -12,8 +12,11 @@ load_dotenv()
 raw_database_url = os.getenv("DATABASE_URL", "")
 
 if raw_database_url:
+    # Railway usa postgres://; SQLAlchemy 2 + psycopg2-binary exige postgresql+psycopg2://
     if raw_database_url.startswith("postgres://"):
-        DATABASE_URL = raw_database_url.replace("postgres://", "postgresql://", 1)
+        DATABASE_URL = raw_database_url.replace("postgres://", "postgresql+psycopg2://", 1)
+    elif raw_database_url.startswith("postgresql://") and "+psycopg" not in raw_database_url.split("://", 1)[0]:
+        DATABASE_URL = raw_database_url.replace("postgresql://", "postgresql+psycopg2://", 1)
     else:
         DATABASE_URL = raw_database_url
 else:
