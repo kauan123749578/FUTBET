@@ -250,8 +250,12 @@ export const ApiService = {
       if (res.ok) {
         const data = await res.json();
         if (Array.isArray(data)) {
-          saveLocalBilhetes(data);
-          return data;
+          const normalizado = data.map((b: BilheteAdmin) => ({
+            ...b,
+            cliente_nome: b.cliente_nome || b.cliente,
+          }));
+          saveLocalBilhetes(normalizado);
+          return normalizado;
         }
       }
     } catch {
@@ -780,6 +784,17 @@ export const ApiService = {
       return { sucesso: false, erro: data.detail || 'Usuário ou senha incorretos.' };
     } catch {
       return null;
+    }
+  },
+
+  async excluirCliente(clienteId: number): Promise<{ sucesso: boolean; erro?: string }> {
+    try {
+      const res = await fetch(`/api/clientes/${clienteId}`, { method: 'DELETE' });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) return { sucesso: true };
+      return { sucesso: false, erro: data.detail || 'Não foi possível excluir o cliente.' };
+    } catch {
+      return { sucesso: false, erro: 'Erro de conexão ao excluir cliente.' };
     }
   },
 

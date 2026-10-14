@@ -43,8 +43,31 @@ interface AdminPainelProps {
   onVoltarSimulador?: () => void;
 }
 
+function nomeApostadorBilhete(b: BilheteAdmin): string {
+  return (b.cliente_nome || b.cliente || 'Apostador').trim();
+}
+
+function formatDataCadastro(raw?: string): string {
+  if (!raw || !String(raw).trim()) return '—';
+  const s = String(raw).trim();
+  if (/^\d{2}\/\d{2}\/\d{4}/.test(s)) return s.split(' ')[0];
+  const d = new Date(s);
+  if (!Number.isNaN(d.getTime())) return d.toLocaleDateString('pt-BR');
+  return s;
+}
+
+function classeStatusBilhete(status: string): string {
+  const st = (status || '').toLowerCase();
+  if (st === 'pendente') return 'bg-amber-500/20 text-amber-300 border-amber-500/40';
+  if (st === 'aberto') return 'bg-blue-500/20 text-blue-300 border-blue-500/40';
+  if (st.includes('ganh')) return 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40';
+  if (st.includes('perd')) return 'bg-red-500/20 text-red-300 border-red-500/40';
+  if (st.includes('cancel')) return 'bg-gray-500/20 text-gray-400 border-gray-500/40';
+  return 'bg-yellow-500/20 text-yellow-300 border-yellow-500/40';
+}
+
 export const AdminPainelDesktopView: React.FC<AdminPainelProps> = ({ onVoltarSimulador }) => {
-  const { logoutOperador, setModalCadastroClienteAberto } = useBetting();
+  const { logoutOperador, setModalCadastroClienteAberto, sessaoOperador } = useBetting();
 
   // Sub-abas do menu lateral esquerdo
   const [menuAtivo, setMenuAtivo] = useState<
@@ -95,6 +118,10 @@ export const AdminPainelDesktopView: React.FC<AdminPainelProps> = ({ onVoltarSim
     senha: '',
     saldo_inicial: 0
   });
+
+  const [codigoValidarAdmin, setCodigoValidarAdmin] = useState('');
+  const [validandoBilhete, setValidandoBilhete] = useState(false);
+  const [msgValidacao, setMsgValidacao] = useState<{ tipo: 'ok' | 'erro'; texto: string } | null>(null);
 
   const statsRelatorio = useMemo(() => {
     const norm = (s: string) => (s || '').toLowerCase();
@@ -274,6 +301,40 @@ export const AdminPainelDesktopView: React.FC<AdminPainelProps> = ({ onVoltarSim
       await recarregarTodosDados();
     } else {
       alert(res.erro || 'Erro ao cadastrar cliente.');
+    }
+  };
+
+  const handleExcluirCliente = async (cli: ClienteModel) => {
+    if (
+      !window.confirm(
+        `Remover o cliente "${cli.nome}" (${cli.telefone})?\n\nOs bilhetes já emitidos permanecem no sistema; só a conta de login será apagada.`
+      )
+    ) {
+      return;
+    }
+    const res = await ApiService.excluirCliente(cli.id);
+    if (res.sucesso) {
+      await recarregarTodosDados();
+    } else {
+      alert(res.erro || 'Erro ao excluir cliente.');
+    }
+  };
+
+  const validarBilheteAdmin = async (codigoOuPin: string) => {
+    const clean = codigoOuPin.trim().toUpperCase();
+    if (!clean) return;
+    setValidandoBilhete(true);
+    setMsgValidacao(null);
+    const operador = sessaoOperador?.nome || 'Admin / Dono';
+    const res = await ApiService.validarPin(clean, undefined, operador);
+    setValidandoBilhete(false);
+    if (res.success) {
+      confetti({ particleCount: 40, spread: 50 });
+      setMsgValidacao({ tipo: 'ok', texto: res.message || `Bilhete validado!` });
+      setCodigoValidarAdmin('');
+      await recarregarTodosDados();
+    } else {
+      setMsgValidacao({ tipo: 'erro', texto: res.erro || 'Não foi possível validar.' });
     }
   };
 
@@ -853,12 +914,13 @@ export const AdminPainelDesktopView: React.FC<AdminPainelProps> = ({ onVoltarSim
                         <th className="p-3.5">Total Apostado</th>
                         <th className="p-3.5">Data de Cadastro</th>
                         <th className="p-3.5 text-center">Contato</th>
+                        <th className="p-3.5 text-center">Ações</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-[#101D3E]">
                       {clientes.length === 0 ? (
                         <tr>
-                          <td colSpan={7} className="p-8 text-center text-gray-400">
+                          <td colSpan={8} className="p-8 text-center text-gray-400">
                             Nenhum cliente cadastrado ainda. Clique em "Cadastrar Novo Cliente" acima!
                           </td>
                         </tr>
@@ -879,9 +941,7 @@ export const AdminPainelDesktopView: React.FC<AdminPainelProps> = ({ onVoltarSim
                             <td className="p-3.5 font-mono font-bold text-blue-400">
                               R$ {Number(cli.total_apostado || 0).toFixed(2)}
                             </td>
-                            <td className="p-3.5 text-gray-400">
-                              {new Date(cli.criado_em).toLocaleDateString('pt-BR')}
-                            </td>
+                            <td className="p-3.5 text-gray-400">{formatDataCadastro(cli.criado_em)}</td>
                             <td className="p-3.5 text-center">
                               <a
                                 href={`https://wa.me/${cli.telefone.replace(/\D/g, '')}`}
@@ -892,6 +952,17 @@ export const AdminPainelDesktopView: React.FC<AdminPainelProps> = ({ onVoltarSim
                                 <MessageCircle className="w-3.5 h-3.5" />
                                 <span>Chamar</span>
                               </a>
+                            </td>
+                            <td className="p-3.5 text-center">
+                              <button
+                                type="button"
+                                onClick={() => handleExcluirCliente(cli)}
+                                className="inline-flex items-center gap-1 bg-red-950/50 hover:bg-red-900/60 text-red-300 border border-red-800/50 px-2.5 py-1 rounded-md text-xs font-bold"
+                                title="Excluir cliente"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                                Excluir
+                              </button>
                             </td>
                           </tr>
                         ))
@@ -921,11 +992,70 @@ export const AdminPainelDesktopView: React.FC<AdminPainelProps> = ({ onVoltarSim
                     className="bg-[#050B1A] border border-[#14234A] rounded-lg px-3 py-1.5 text-xs text-white"
                   >
                     <option value="todos">Todos os Status</option>
-                    <option value="Aberto">Abertos</option>
-                    <option value="Ganho">Ganhos</option>
-                    <option value="Perdido">Perdidos</option>
+                    <option value="Pendente">Pendentes (validar)</option>
+                    <option value="Aberto">Validados / Abertos</option>
+                    <option value="Ganhou">Ganhos</option>
+                    <option value="Perdeu">Perdidos</option>
+                    <option value="Cancelado">Cancelados</option>
                   </select>
+                  <button
+                    type="button"
+                    onClick={recarregarTodosDados}
+                    className="p-2 rounded-lg bg-[#0E1A38] text-gray-300 hover:text-white"
+                    title="Atualizar lista"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                  </button>
                 </div>
+              </div>
+
+              <div className="bg-gradient-to-r from-[#0A1F3A] to-[#050B1A] border border-cyan-500/30 rounded-2xl p-4 shadow-xl space-y-3">
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="w-5 h-5 text-cyan-400" />
+                  <h3 className="text-sm font-black text-white uppercase">Validar bilhete (código ou PIN)</h3>
+                </div>
+                <p className="text-[11px] text-gray-400 max-w-2xl">
+                  Quando o cliente pagar no WhatsApp, digite o <strong className="text-white">código</strong> (ex: KG4R-JYLQ) ou o{' '}
+                  <strong className="text-white">PIN de 6 dígitos</strong> e clique em validar. O status muda de Pendente para Aberto.
+                </p>
+                <form
+                  className="flex flex-col sm:flex-row gap-2"
+                  onSubmit={e => {
+                    e.preventDefault();
+                    validarBilheteAdmin(codigoValidarAdmin);
+                  }}
+                >
+                  <input
+                    type="text"
+                    value={codigoValidarAdmin}
+                    onChange={e => setCodigoValidarAdmin(e.target.value.toUpperCase())}
+                    placeholder="Código ou PIN do bilhete"
+                    className="flex-1 bg-[#070B13] border border-[#233352] rounded-xl px-4 py-2.5 text-sm font-mono font-bold text-white uppercase placeholder-gray-500 focus:outline-none focus:border-cyan-500"
+                  />
+                  <button
+                    type="submit"
+                    disabled={validandoBilhete || !codigoValidarAdmin.trim()}
+                    className="bg-emerald-500 hover:bg-emerald-400 disabled:opacity-50 text-gray-950 font-black px-6 py-2.5 rounded-xl text-xs uppercase flex items-center justify-center gap-2"
+                  >
+                    {validandoBilhete ? (
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <CheckCircle2 className="w-4 h-4" />
+                    )}
+                    Validar bilhete
+                  </button>
+                </form>
+                {msgValidacao && (
+                  <p
+                    className={`text-xs font-bold px-3 py-2 rounded-lg ${
+                      msgValidacao.tipo === 'ok'
+                        ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30'
+                        : 'bg-red-500/15 text-red-300 border border-red-500/30'
+                    }`}
+                  >
+                    {msgValidacao.texto}
+                  </p>
+                )}
               </div>
 
               <div className="bg-[#050B1A] border border-[#14234A] rounded-2xl overflow-hidden shadow-2xl">
@@ -934,36 +1064,83 @@ export const AdminPainelDesktopView: React.FC<AdminPainelProps> = ({ onVoltarSim
                     <thead>
                       <tr className="bg-[#00227B] text-white uppercase text-[11px] font-black tracking-wider">
                         <th className="p-3.5">Código</th>
+                        <th className="p-3.5">PIN</th>
                         <th className="p-3.5">Data / Hora</th>
                         <th className="p-3.5">Apostador</th>
                         <th className="p-3.5">Cambista</th>
                         <th className="p-3.5">Valor Apostado</th>
                         <th className="p-3.5">Retorno Possível</th>
                         <th className="p-3.5">Status</th>
+                        <th className="p-3.5 text-center">Ações</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-[#101D3E]">
                       {bilhetes
-                        .filter(b => filtroStatus === 'todos' || b.status === filtroStatus)
-                        .map(b => (
-                          <tr key={b.codigo} className="hover:bg-[#0B1530]">
-                            <td className="p-3.5 font-mono font-black text-yellow-400">{b.codigo}</td>
-                            <td className="p-3.5 text-gray-400">{b.data}</td>
-                            <td className="p-3.5 font-bold text-white">{b.cliente_nome || 'Cliente Balcão'}</td>
-                            <td className="p-3.5 text-blue-300 font-semibold">{b.cambista_nome || 'Direto'}</td>
-                            <td className="p-3.5 font-mono font-bold text-gray-200">R$ {b.valor_apostado.toFixed(2)}</td>
-                            <td className="p-3.5 font-mono font-bold text-emerald-400">R$ {(b.retorno_possivel ?? b.retorno_potencial ?? 0).toFixed(2)}</td>
-                            <td className="p-3.5">
-                              <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase ${
-                                b.status === 'Ganho' ? 'bg-emerald-500/20 text-emerald-300' :
-                                b.status === 'Perdido' ? 'bg-red-500/20 text-red-300' :
-                                'bg-yellow-500/20 text-yellow-300'
-                              }`}>
-                                {b.status}
-                              </span>
-                            </td>
-                          </tr>
-                        ))}
+                        .filter(b => {
+                          if (filtroStatus === 'todos') return true;
+                          return (b.status || '').toLowerCase() === filtroStatus.toLowerCase();
+                        })
+                        .filter(b => {
+                          if (!termoBusca.trim()) return true;
+                          const t = termoBusca.toLowerCase();
+                          return (
+                            b.codigo.toLowerCase().includes(t) ||
+                            nomeApostadorBilhete(b).toLowerCase().includes(t) ||
+                            (b.pin || '').includes(t)
+                          );
+                        })
+                        .map(b => {
+                          const pendente = (b.status || '').toLowerCase() === 'pendente';
+                          return (
+                            <tr key={b.codigo} className="hover:bg-[#0B1530]">
+                              <td className="p-3.5 font-mono font-black text-yellow-400">{b.codigo}</td>
+                              <td className="p-3.5 font-mono text-gray-400">{b.pin || '—'}</td>
+                              <td className="p-3.5 text-gray-400">{b.data}</td>
+                              <td className="p-3.5 font-bold text-white">
+                                {nomeApostadorBilhete(b)}
+                                {b.cliente_telefone && (
+                                  <span className="block text-[10px] font-normal text-gray-500 font-mono">
+                                    {b.cliente_telefone}
+                                  </span>
+                                )}
+                              </td>
+                              <td className="p-3.5 text-blue-300 font-semibold">{b.validado_por || b.cambista_nome || 'Site'}</td>
+                              <td className="p-3.5 font-mono font-bold text-gray-200">R$ {b.valor_apostado.toFixed(2)}</td>
+                              <td className="p-3.5 font-mono font-bold text-emerald-400">
+                                R$ {(b.retorno_possivel ?? b.retorno_potencial ?? 0).toFixed(2)}
+                              </td>
+                              <td className="p-3.5">
+                                <span
+                                  className={`px-2 py-0.5 rounded border text-[10px] font-black uppercase ${classeStatusBilhete(b.status)}`}
+                                >
+                                  {b.status}
+                                </span>
+                              </td>
+                              <td className="p-3.5 text-center">
+                                {pendente ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => validarBilheteAdmin(b.codigo)}
+                                    disabled={validandoBilhete}
+                                    className="inline-flex items-center gap-1 bg-emerald-600 hover:bg-emerald-500 text-white px-2.5 py-1 rounded-md text-[10px] font-black uppercase disabled:opacity-50"
+                                  >
+                                    <Check className="w-3 h-3" />
+                                    Validar
+                                  </button>
+                                ) : (
+                                  <span className="text-[10px] text-gray-500">—</span>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      {bilhetes.length === 0 && (
+                        <tr>
+                          <td colSpan={9} className="p-8 text-center text-gray-500">
+                            Nenhum bilhete emitido ainda.
+                          </td>
+                        </tr>
+                      )}
                     </tbody>
                   </table>
                 </div>

@@ -276,10 +276,21 @@ def listar_clientes(db: Session = Depends(get_db)):
             "total_apostado": c.total_apostado or 0.0,
             "total_bilhetes": c.total_bilhetes or 0,
             "is_registered": getattr(c, "is_registered", False),
-            "criado_em": c.criado_em.strftime("%d/%m/%Y") if c.criado_em else "01/10/2026"
+            "criado_em": c.criado_em.strftime("%d/%m/%Y") if c.criado_em else "",
         }
         for c in todos
     ]
+
+
+@app.delete("/api/clientes/{cliente_id}")
+def deletar_cliente(cliente_id: int, db: Session = Depends(get_db)):
+    c = db.query(Cliente).filter(Cliente.id == cliente_id).first()
+    if not c:
+        raise HTTPException(status_code=404, detail="Cliente não encontrado.")
+    nome = c.nome
+    db.delete(c)
+    db.commit()
+    return {"success": True, "message": f"Cliente {nome} removido com sucesso!"}
 
 # ==================== ENDPOINTS DE CAMBISTAS ====================
 
