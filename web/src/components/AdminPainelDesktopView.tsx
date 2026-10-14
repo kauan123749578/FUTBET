@@ -59,7 +59,7 @@ export const AdminPainelDesktopView: React.FC<AdminPainelProps> = ({ onVoltarSim
   const [clientes, setClientes] = useState<ClienteModel[]>([]);
   const [caixa, setCaixa] = useState<ResumoCaixaDono | null>(null);
   const [configs, setConfigs] = useState<ConfiguracoesBanca>({
-    whatsapp_dono: '5511999999999',
+    whatsapp_dono: '5521990808924',
     chave_pix: '11999999999',
     nome_banca: 'FUTBET',
     comissao_padrao: '10.0',

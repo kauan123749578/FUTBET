@@ -71,6 +71,7 @@ class Bilhete(Base):
     __tablename__ = "bilhetes"
     id = Column(Integer, primary_key=True, index=True)
     codigo = Column(String(20), unique=True, index=True, nullable=False) # Ex: TCQG-H6UC
+    pin = Column(String(12), default="")
     criado_em = Column(DateTime, default=datetime.utcnow)
     data_formatada = Column(String(30), default="") # Ex: 07/10/2026 15:08:36
     status = Column(String(20), default="Aberto") # 'Aberto', 'Ganhou', 'Perdeu', 'Cancelado', 'Pendente'
@@ -118,8 +119,37 @@ def init_db():
             db.add(Configuracao(chave=k, valor=v))
     db.commit()
 
+    # Corrige WhatsApp placeholder salvo em deploys antigos
+    wa = db.query(Configuracao).filter(Configuracao.chave == "whatsapp_dono").first()
+    if wa and wa.valor:
+        digits = "".join(c for c in wa.valor if c.isdigit())
+        if digits in ("5511999999999", "55119999999", "11999999999") or not digits:
+            wa.valor = configs_padrao["whatsapp_dono"]
+            db.commit()
+
     db.close()
+    _ensure_bilhete_pin_column()
     print("[DATABASE] Tabelas e configurações inicializadas.")
+
+
+def _ensure_bilhete_pin_column():
+    """Adiciona coluna pin em bancos criados antes desta versão."""
+    from sqlalchemy import inspect, text
+
+    try:
+        insp = inspect(engine)
+        if "bilhetes" not in insp.get_table_names():
+            return
+        cols = {c["name"] for c in insp.get_columns("bilhetes")}
+        if "pin" in cols:
+            return
+        with engine.begin() as conn:
+            if DATABASE_URL.startswith("sqlite"):
+                conn.execute(text("ALTER TABLE bilhetes ADD COLUMN pin VARCHAR(12) DEFAULT ''"))
+            else:
+                conn.execute(text("ALTER TABLE bilhetes ADD COLUMN IF NOT EXISTS pin VARCHAR(12) DEFAULT ''"))
+    except Exception as exc:
+        print(f"[DATABASE] Aviso: coluna pin em bilhetes — {exc}")
 
 
 if __name__ == "__main__":

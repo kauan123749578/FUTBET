@@ -11,13 +11,71 @@ import {
   ConfiguracoesBanca,
   ResumoCaixaDono
 } from '../types/betting';
+import {
+  sanitizeConfiguracoesBanca,
+  mapStatusBilheteApi,
+  WHATSAPP_SUPORTE_NUM,
+  CONFIGS_PADRAO_BANCA,
+} from '../utils/whatsappBilhete';
 
 const STORAGE_BILHETES_ADMIN_KEY = 'futbet_bilhetes_v4';
 const STORAGE_CONFIGS_KEY = 'futbet_configs_v4';
 const STORAGE_CAMBISTAS_KEY = 'futbet_cambistas_v4';
 
 /** Suporte / WhatsApp da banca (DDI 55 + DDD 21). */
-export const WHATSAPP_SUPORTE_NUM = '5521990808924';
+export { WHATSAPP_SUPORTE_NUM };
+
+const STORAGE_BILHETES_CLIENTE_PREFIX = 'futbet_bilhetes_cliente_';
+
+function onlyDigits(v: string): string {
+  return (v || '').replace(/\D/g, '');
+}
+
+function saveBilheteClienteLocal(telefone: string, codigo: string) {
+  const key = STORAGE_BILHETES_CLIENTE_PREFIX + onlyDigits(telefone);
+  try {
+    const raw = localStorage.getItem(key);
+    const list: string[] = raw ? JSON.parse(raw) : [];
+    if (!list.includes(codigo)) {
+      list.unshift(codigo);
+      localStorage.setItem(key, JSON.stringify(list.slice(0, 50)));
+    }
+  } catch {
+    /* ignore */
+  }
+}
+
+export function bilheteAdminParaFrontend(b: BilheteAdmin): Bilhete {
+  const itensRaw = b.itens || [];
+  return {
+    codigo: b.codigo,
+    pin: b.pin || undefined,
+    criadoEm: b.data || new Date().toISOString(),
+    apostadorNome: b.cliente,
+    apostadorTelefone: b.cliente_telefone,
+    tipo: b.tipo === 'M' ? 'multipla' : 'simples',
+    cotacaoTotal: b.cotacao_total,
+    valorApostado: b.valor_apostado,
+    retornoPotencial: b.retorno_potencial,
+    status: mapStatusBilheteApi(b.status),
+    validadoPor: b.validado_por,
+    itens: itensRaw.map((it: Record<string, unknown>, idx: number) => ({
+      jogoId: String(idx),
+      jogoDescricao: String(it.jogo || it.jogoDescricao || 'Partida'),
+      mandante: '',
+      visitante: '',
+      campeonatoNome: String(it.campeonato || 'Futebol'),
+      dataHoraFormatada: '',
+      mercadoId: 'mercado',
+      mercadoNome: String(it.mercado || it.mercadoNome || 'Resultado'),
+      palpiteRotulo: String(it.palpite || it.palpiteRotulo || ''),
+      oddValor: Number(it.odd || it.oddValor || 1),
+      statusPalpite: 'pendente' as const,
+    })),
+    hashSeguranca: b.hash_seguranca || '',
+    chavePixBanca: b.chave_pix_usada || CONFIGS_PADRAO.chave_pix,
+  };
+}
 
 export const FUTEBOL_ESPORTE: Esporte = { id: 102, nome: 'Futebol', icone: '⚽', totalJogos: 0 };
 
@@ -29,13 +87,7 @@ export const CAMPEONATOS_FUTEBOL: Campeonato[] = [
   { id: 574587, idEsporte: 102, pais: 'Clubes Internacionais', bandeira: '🌎', nome: 'Copa Sul-Americana', totalJogos: 0, destaque: true },
 ];
 
-export const CONFIGS_PADRAO: ConfiguracoesBanca = {
-  whatsapp_dono: WHATSAPP_SUPORTE_NUM,
-  chave_pix: '11999999999',
-  nome_banca: 'FUTBET',
-  comissao_padrao: '10.0',
-  limite_padrao_cambista: '2000.00'
-};
+export const CONFIGS_PADRAO: ConfiguracoesBanca = CONFIGS_PADRAO_BANCA;
 
 function getLocalBilhetes(): BilheteAdmin[] {
   try {
@@ -60,8 +112,7 @@ function getLocalConfigs(): ConfiguracoesBanca {
     const raw = localStorage.getItem(STORAGE_CONFIGS_KEY);
     if (!raw) return CONFIGS_PADRAO;
     const parsed = JSON.parse(raw);
-    if (parsed.nome_banca === 'ESCANTEIOBET') parsed.nome_banca = 'FUTBET';
-    return { ...CONFIGS_PADRAO, ...parsed };
+    return sanitizeConfiguracoesBanca(parsed);
   } catch {
     return CONFIGS_PADRAO;
   }
@@ -113,14 +164,57 @@ export const ApiService = {
       const res = await fetch('/api/configuracoes');
       if (res.ok) {
         const data = await res.json();
-        const merged = { ...CONFIGS_PADRAO, ...data };
+        const merged = sanitizeConfiguracoesBanca(data);
         saveLocalConfigs(merged);
         return merged;
       }
     } catch {
       // Offline fallback
     }
-    return getLocalConfigs();
+    return sanitizeConfiguracoesBanca(getLocalConfigs());
+  },
+
+  async listarBilhetesCliente(telefone: string): Promise<Bilhete[]> {
+    const tel = onlyDigits(telefone);
+    if (!tel) return [];
+
+    let fromApi: BilheteAdmin[] = [];
+    try {
+      const q = new URLSearchParams({ telefone: tel });
+      const res = await fetch(`/api/bilhetes?${q.toString()}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (Array.isArray(data)) fromApi = data;
+      }
+    } catch {
+      /* offline */
+    }
+
+    const local = getLocalBilhetes().filter(
+      b => onlyDigits(b.cliente_telefone || '').includes(tel) || tel.includes(onlyDigits(b.cliente_telefone || ''))
+    );
+
+    const byCodigo = new Map<string, BilheteAdmin>();
+    [...fromApi, ...local].forEach(b => {
+      if (b.codigo) byCodigo.set(b.codigo.toUpperCase(), b);
+    });
+
+    const key = STORAGE_BILHETES_CLIENTE_PREFIX + tel;
+    try {
+      const saved: string[] = JSON.parse(localStorage.getItem(key) || '[]');
+      for (const cod of saved) {
+        if (!byCodigo.has(cod.toUpperCase())) {
+          const found = getLocalBilhetes().find(x => x.codigo.toUpperCase() === cod.toUpperCase());
+          if (found) byCodigo.set(cod.toUpperCase(), found);
+        }
+      }
+    } catch {
+      /* ignore */
+    }
+
+    return Array.from(byCodigo.values())
+      .sort((a, b) => (b.id || 0) - (a.id || 0))
+      .map(bilheteAdminParaFrontend);
   },
 
   // POST /api/configuracoes
@@ -223,7 +317,7 @@ export const ApiService = {
     const codigo = `${rand1}-${rand2}`;
     const pin = Math.floor(100000 + Math.random() * 900000).toString();
 
-    const configs = getLocalConfigs();
+    const configs = sanitizeConfiguracoesBanca(await this.getConfiguracoes());
     const agora = new Date();
     const dataFormatada = agora.toLocaleString('pt-BR');
 
@@ -275,6 +369,10 @@ export const ApiService = {
     const bilhetes = getLocalBilhetes();
     bilhetes.unshift(novoAdmin);
     saveLocalBilhetes(bilhetes);
+
+    if (payload.apostadorTelefone) {
+      saveBilheteClienteLocal(payload.apostadorTelefone, codigo);
+    }
 
     // Retorna no formato Bilhete para os componentes legados
     return {

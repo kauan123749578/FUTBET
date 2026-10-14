@@ -17,6 +17,12 @@ import {
   ArrowRight
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { CONFIGS_PADRAO } from '../services/api';
+import {
+  abrirWhatsAppBilhete,
+  formatarMensagemBilheteWhatsApp,
+  sanitizeConfiguracoesBanca,
+} from '../utils/whatsappBilhete';
 
 export const TicketReceiptModal: React.FC = () => {
   const { bilheteGerado, modalBilheteAberto, fecharModalBilhete } = useBetting();
@@ -24,51 +30,18 @@ export const TicketReceiptModal: React.FC = () => {
   const [copiadoPix, setCopiadoPix] = useState(false);
   const [copiadoCodigo, setCopiadoCodigo] = useState(false);
   const [copiadoPin, setCopiadoPin] = useState(false);
-  const [configs, setConfigs] = useState<ConfiguracoesBanca>({
-    whatsapp_dono: '5511999999999',
-    chave_pix: '11999999999',
-    nome_banca: 'FUTBET',
-    comissao_padrao: '10.0',
-    limite_padrao_cambista: '2000.00'
-  });
+  const [configs, setConfigs] = useState<ConfiguracoesBanca>(CONFIGS_PADRAO);
 
   useEffect(() => {
-    ApiService.getConfiguracoes().then(setConfigs);
+    ApiService.getConfiguracoes().then(c => setConfigs(sanitizeConfiguracoesBanca(c)));
   }, [modalBilheteAberto]);
 
   if (!modalBilheteAberto || !bilheteGerado) return null;
 
-  const chavePixEfetiva = configs.chave_pix || bilheteGerado.chavePixBanca || '11999999999';
-  const whatsappEfetivo = configs.whatsapp_dono || '5511999999999';
-  const pinEfetivo = bilheteGerado.pin || '849201';
+  const chavePixEfetiva = configs.chave_pix || bilheteGerado.chavePixBanca || CONFIGS_PADRAO.chave_pix;
+  const pinEfetivo = bilheteGerado.pin || '—';
 
-  // Monta texto formatado profissional para o WhatsApp direto do Cambista ou Dono
-  const formatarTextoWhatsApp = () => {
-    const b = bilheteGerado;
-    const listaJogos = b.itens
-      .map(
-        (it, idx) =>
-          `${idx + 1}. *${it.jogoDescricao}*\n   ├ Mercado: ${it.mercadoNome || '1X2'}\n   ├ Palpite: *${it.palpiteRotulo}*\n   └ Cotação: *${it.oddValor.toFixed(2)}*`
-      )
-      .join('\n\n');
-
-    return `*⚽ ${configs.nome_banca} - NOVO BILHETE DE APOSTA*\n\n` +
-      `🎟️ *CÓDIGO DO CUPOM:* \`${b.codigo}\`\n` +
-      `🔐 *PIN DE VALIDAÇÃO:* \`${pinEfetivo}\`\n` +
-      `👤 *Apostador:* ${b.apostadorNome}\n` +
-      `📅 *Data:* ${new Date(b.criadoEm).toLocaleString('pt-BR')}\n` +
-      `--------------------------------\n` +
-      `*JOGOS SELECIONADOS:*\n\n${listaJogos}\n` +
-      `--------------------------------\n` +
-      `*Tipo:* ${b.tipo === 'multipla' ? 'MÚLTIPLA' : 'SIMPLES'}\n` +
-      `📈 *Cotação Total:* *${b.cotacaoTotal.toFixed(2)}*\n` +
-      `💰 *Valor da Aposta:* *R$ ${b.valorApostado.toFixed(2)}*\n` +
-      `🎯 *Possível Retorno:* *R$ ${b.retornoPotencial.toFixed(2)}*\n` +
-      `--------------------------------\n` +
-      `🔑 *CHAVE PIX PARA PAGAMENTO:*\n` +
-      `\`${chavePixEfetiva}\`\n\n` +
-      `_Fiz a aposta pelo site! Segue o PIX e o PIN ${pinEfetivo} para validar meu bilhete!_`;
-  };
+  const formatarTextoWhatsApp = () => formatarMensagemBilheteWhatsApp(bilheteGerado, configs);
 
   const handleCompartilharWhatsApp = () => {
     confetti({
@@ -76,13 +49,7 @@ export const TicketReceiptModal: React.FC = () => {
       spread: 80,
       origin: { y: 0.5 }
     });
-
-    const texto = encodeURIComponent(formatarTextoWhatsApp());
-    const cleanNum = whatsappEfetivo.replace(/\D/g, '');
-    const num = cleanNum.startsWith('55') ? cleanNum : `55${cleanNum}`;
-    
-    // Abre direto o WhatsApp do Dono/Cambista com a mensagem pronta
-    window.open(`https://wa.me/${num}?text=${texto}`, '_blank');
+    abrirWhatsAppBilhete(bilheteGerado, configs);
   };
 
   const handleCopiarTexto = () => {

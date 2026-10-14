@@ -31,6 +31,27 @@ def get_db():
 
 api_football = FootballAPIService()
 
+WHATSAPP_OFICIAL = "5521990808924"
+PLACEHOLDER_WHATSAPP = {"5511999999999", "55119999999", "11999999999"}
+
+
+def _only_digits(value: str) -> str:
+    return "".join(c for c in (value or "") if c.isdigit())
+
+
+def _aplicar_config_oficial(res: Dict[str, Any], db: Session) -> Dict[str, Any]:
+    wa = _only_digits(res.get("whatsapp_dono", ""))
+    if not wa or wa in PLACEHOLDER_WHATSAPP:
+        res["whatsapp_dono"] = WHATSAPP_OFICIAL
+        cfg = db.query(Configuracao).filter(Configuracao.chave == "whatsapp_dono").first()
+        if cfg and _only_digits(cfg.valor) in PLACEHOLDER_WHATSAPP | {""}:
+            cfg.valor = WHATSAPP_OFICIAL
+            db.commit()
+    if not res.get("nome_banca") or res.get("nome_banca") == "ESCANTEIOBET":
+        res["nome_banca"] = "FUTBET"
+    return res
+
+
 @app.on_event("startup")
 def on_startup():
     init_db()
@@ -409,9 +430,7 @@ def relatorio_cambista(cambista_id: int, db: Session = Depends(get_db)):
 def get_configuracoes(db: Session = Depends(get_db)):
     todas = db.query(Configuracao).all()
     res = {c.chave: c.valor for c in todas}
-    if not res.get("nome_banca") or res.get("nome_banca") == "ESCANTEIOBET":
-        res["nome_banca"] = "FUTBET"
-    return res
+    return _aplicar_config_oficial(res, db)
 
 @app.post("/api/configuracoes")
 def salvar_configuracoes(dados: ConfigUpdateSchema, db: Session = Depends(get_db)):
@@ -433,6 +452,7 @@ def listar_bilhetes(
     status: Optional[str] = None,
     cambista_id: Optional[int] = None,
     busca: Optional[str] = None,
+    telefone: Optional[str] = None,
     db: Session = Depends(get_db)
 ):
     query = db.query(Bilhete)
@@ -442,6 +462,15 @@ def listar_bilhetes(
         query = query.filter(Bilhete.cambista_id == cambista_id)
 
     todos = query.order_by(Bilhete.id.desc()).all()
+
+    tel_filtro = _only_digits(telefone or "")
+    if tel_filtro:
+        todos = [
+            b for b in todos
+            if tel_filtro in _only_digits(b.cliente_telefone or "")
+            or tel_filtro.endswith(_only_digits(b.cliente_telefone or ""))
+            or _only_digits(b.cliente_telefone or "").endswith(tel_filtro[-11:] if len(tel_filtro) >= 11 else tel_filtro)
+        ]
     res = []
     for b in todos:
         itens = []
@@ -519,6 +548,8 @@ def criar_bilhete(dados: CriarBilheteSchema, db: Session = Depends(get_db)):
     pin = str(random.randint(100000, 999999))
 
     comissao = round(dados.valor_apostado * 0.1, 2)
+    cfg_pix = db.query(Configuracao).filter(Configuracao.chave == "chave_pix").first()
+    chave_pix = cfg_pix.valor if cfg_pix else ""
     novo = Bilhete(
         codigo=codigo,
         pin=pin,
@@ -533,6 +564,7 @@ def criar_bilhete(dados: CriarBilheteSchema, db: Session = Depends(get_db)):
         cliente_telefone=dados.apostador_telefone or "",
         itens_json=json.dumps(dados.itens, ensure_ascii=False),
         hash_seguranca=f"SEC-{codigo}-{datetime.utcnow().strftime('%y%m%d')}",
+        chave_pix_usada=chave_pix,
         validado_por="Pendente de Validação"
     )
     db.add(novo)

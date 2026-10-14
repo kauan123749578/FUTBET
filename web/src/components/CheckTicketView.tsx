@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { ApiService } from '../services/api';
+import { ApiService, bilheteAdminParaFrontend } from '../services/api';
 import { Bilhete } from '../types/betting';
 import { useBetting } from '../context/BettingContext';
 import { Search, ShieldAlert, CheckCircle, Clock, Trophy, Ticket } from 'lucide-react';
+import { ClienteMinhasApostas } from './ClienteMinhasApostas';
+import { mapStatusBilheteApi } from '../utils/whatsappBilhete';
 
 
 export const CheckTicketView: React.FC = () => {
-  const { abrirModalComBilhete } = useBetting();
+  const { abrirModalComBilhete, sessaoCliente } = useBetting();
   const [codigoInput, setCodigoInput] = useState('');
   const [bilheteEncontrado, setBilheteEncontrado] = useState<Bilhete | null>(null);
   const [buscado, setBuscado] = useState(false);
@@ -29,32 +31,8 @@ export const CheckTicketView: React.FC = () => {
     try {
       const res = await ApiService.getBilhetePorCodigo(codigo);
       if (res) {
-        const bAdaptado: Bilhete = {
-          codigo: res.codigo,
-          criadoEm: res.data || new Date().toISOString(),
-          apostadorNome: res.cliente,
-          apostadorTelefone: res.cliente_telefone,
-          itens: (res.itens || []).map((it: any) => ({
-            jogoId: it.jogo || '1',
-            jogoDescricao: it.jogo || it.jogoDescricao || 'Partida',
-            mandante: '',
-            visitante: '',
-            campeonatoNome: it.campeonato || 'Futebol',
-            dataHoraFormatada: '',
-            mercadoId: '1x2',
-            mercadoNome: 'Resultado',
-            palpiteRotulo: it.palpite || it.palpiteRotulo || '',
-            oddValor: it.odd || it.oddValor || 1.0,
-            statusPalpite: 'pendente'
-          })),
-          tipo: res.tipo === 'M' ? 'multipla' : 'simples',
-          cotacaoTotal: res.cotacao_total,
-          valorApostado: res.valor_apostado,
-          retornoPotencial: res.retorno_potencial,
-          status: res.status === 'Aberto' ? 'validado' : res.status === 'Ganhou' ? 'premiado' : res.status === 'Perdeu' ? 'perdido' : 'cancelado',
-          hashSeguranca: res.hash_seguranca,
-          chavePixBanca: res.chave_pix_usada || '11999999999'
-        };
+        const bAdaptado = bilheteAdminParaFrontend(res);
+        bAdaptado.status = mapStatusBilheteApi(res.status);
         setBilheteEncontrado(bAdaptado);
       } else {
         setBilheteEncontrado(null);
@@ -71,6 +49,8 @@ export const CheckTicketView: React.FC = () => {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
+      {sessaoCliente && <ClienteMinhasApostas />}
+
       {/* Header */}
       <div className="bg-[#0E1526] border border-[#1B2742] rounded-2xl p-6 text-center space-y-3 shadow-lg">
         <div className="w-12 h-12 rounded-2xl bg-blue-600/20 border border-blue-500/40 flex items-center justify-center text-blue-400 mx-auto">
