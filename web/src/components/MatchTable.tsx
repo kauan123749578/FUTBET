@@ -503,7 +503,11 @@ export const MatchTable: React.FC = () => {
                     >
                       <span className="flex items-center gap-0.5">
                         <Plus className="w-3 h-3" />
-                        <span>{jogo.totalMercadosDisponiveis}</span>
+                        <span>
+                          {jogo.totalMercadosDisponiveis ||
+                            jogo.mercadosAdicionais?.reduce((n, m) => n + m.odds.length, 0) ||
+                            0}
+                        </span>
                       </span>
                       <span className="text-[8px] uppercase tracking-tighter text-gray-500">
                         Mercados

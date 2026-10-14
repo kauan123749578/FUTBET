@@ -48,7 +48,7 @@ interface BettingContextType {
   setTipoAposta: (tipo: TipoAposta) => void;
   setValorApostado: (valor: number) => void;
   adicionarValorRapido: (incremento: number) => void;
-  isOddSelecionada: (jogoId: string | number, palpiteRotulo: string) => boolean;
+  isOddSelecionada: (jogoId: string | number, palpiteRotulo: string, mercadoId?: string) => boolean;
 
   // Bilhete & Simulação
   bilheteGerado: Bilhete | null;
@@ -382,8 +382,13 @@ export const BettingProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setValorApostado(prev => Math.max(1, Math.round((prev + incremento) * 100) / 100));
   }, []);
 
-  const isOddSelecionada = useCallback((jogoId: string | number, palpiteRotulo: string) => {
-    return itensCupom.some(i => i.jogoId === jogoId && i.palpiteRotulo === palpiteRotulo);
+  const isOddSelecionada = useCallback((jogoId: string | number, palpiteRotulo: string, mercadoId?: string) => {
+    return itensCupom.some(
+      i =>
+        i.jogoId === jogoId &&
+        i.palpiteRotulo === palpiteRotulo &&
+        (mercadoId === undefined || i.mercadoId === mercadoId)
+    );
   }, [itensCupom]);
 
   // Cálculos Automáticos de Odd Total e Retorno

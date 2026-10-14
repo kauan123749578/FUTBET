@@ -241,6 +241,147 @@ class FootballAPIService:
         }
         return mapping.get(league_id, abs(hash(league_id)) % 900000 + 500000)
 
+    @staticmethod
+    def _jitter(base: float, idx: int, salt: int, lo: float = 1.05, hi: float = 15.0) -> float:
+        v = base + ((idx * 17 + salt * 13) % 11 - 5) * 0.04
+        return round(max(lo, min(hi, v)), 2)
+
+    def _build_mercados_adicionais(
+        self,
+        home: str,
+        away: str,
+        home_odd: float,
+        draw_odd: float,
+        away_odd: float,
+        idx: int,
+        over_line: float = 2.5,
+    ) -> tuple:
+        """Mercados extras derivados das odds 1X2 (estilo terminal completo)."""
+        markets: List[Dict[str, Any]] = []
+
+        def push(mid: str, nome: str, odds: List[Dict[str, Any]]):
+            if odds:
+                markets.append({"id": mid, "nome": nome, "odds": odds})
+
+        inv_h, inv_d, inv_a = 1 / max(home_odd, 1.01), 1 / max(draw_odd, 1.01), 1 / max(away_odd, 1.01)
+
+        push(
+            "dupla_chance",
+            "Dupla Chance",
+            [
+                {"id": "dc_1x", "tipo": "dc", "rotulo": "Casa ou Empate", "valor": self._jitter(1 / (inv_h + inv_d), idx, 1)},
+                {"id": "dc_12", "tipo": "dc", "rotulo": "Casa ou Fora", "valor": self._jitter(1 / (inv_h + inv_a), idx, 2)},
+                {"id": "dc_x2", "tipo": "dc", "rotulo": "Empate ou Fora", "valor": self._jitter(1 / (inv_d + inv_a), idx, 3)},
+            ],
+        )
+
+        push(
+            "empate_nao_aposta",
+            "Empate não tem aposta",
+            [
+                {"id": "dnb_home", "tipo": "dnb", "rotulo": f"Casa ({home})", "valor": self._jitter(home_odd * 0.72, idx, 4)},
+                {"id": "dnb_away", "tipo": "dnb", "rotulo": f"Fora ({away})", "valor": self._jitter(away_odd * 0.72, idx, 5)},
+            ],
+        )
+
+        ou_lines = [0.5, 1.5, 2.5, 3.5, 4.5, 5.5]
+        ou_odds: List[Dict[str, Any]] = []
+        for i, line in enumerate(ou_lines):
+            over_base = 1.55 + line * 0.22 + (idx % 3) * 0.03
+            under_base = 1.45 + (6 - line) * 0.18
+            ou_odds.append({"id": f"over_{line}", "tipo": "ou", "rotulo": f"Mais de {line}", "valor": self._jitter(over_base, idx, 10 + i)})
+            ou_odds.append({"id": f"under_{line}", "tipo": "ou", "rotulo": f"Menos de {line}", "valor": self._jitter(under_base, idx, 20 + i)})
+        push("total_gols", "Total de Gols no Jogo", ou_odds)
+
+        push(
+            "ambas_marcam",
+            "Ambas as equipes marcam",
+            [
+                {"id": "btts_sim", "tipo": "btts", "rotulo": "Sim", "valor": self._jitter(1.72, idx, 30)},
+                {"id": "btts_nao", "tipo": "btts", "rotulo": "Não", "valor": self._jitter(2.05, idx, 31)},
+            ],
+        )
+
+        push(
+            "impar_par",
+            "Ímpar / Par (total de gols)",
+            [
+                {"id": "par", "tipo": "parity", "rotulo": "Par", "valor": self._jitter(1.88, idx, 32)},
+                {"id": "impar", "tipo": "parity", "rotulo": "Ímpar", "valor": self._jitter(1.92, idx, 33)},
+            ],
+        )
+
+        ht_h = self._jitter(home_odd * 1.55, idx, 40)
+        ht_d = self._jitter(draw_odd * 0.95, idx, 41)
+        ht_a = self._jitter(away_odd * 1.55, idx, 42)
+        push(
+            "vencedor_1t",
+            "Vencedor do 1º tempo",
+            [
+                {"id": "ht_home", "tipo": "ht1x2", "rotulo": f"Casa ({home})", "valor": ht_h},
+                {"id": "ht_draw", "tipo": "ht1x2", "rotulo": "Empate", "valor": ht_d},
+                {"id": "ht_away", "tipo": "ht1x2", "rotulo": f"Fora ({away})", "valor": ht_a},
+            ],
+        )
+
+        ht_ou: List[Dict[str, Any]] = []
+        for i, line in enumerate([0.5, 1.5, 2.5]):
+            ht_ou.append({"id": f"ht_over_{line}", "tipo": "ht_ou", "rotulo": f"Mais de {line} (1T)", "valor": self._jitter(1.65 + line * 0.35, idx, 50 + i)})
+            ht_ou.append({"id": f"ht_under_{line}", "tipo": "ht_ou", "rotulo": f"Menos de {line} (1T)", "valor": self._jitter(1.55 + (2 - line) * 0.25, idx, 55 + i)})
+        push("total_gols_1t", "Total de Gols — 1º tempo", ht_ou)
+
+        handicaps = [-1.5, -1.0, -0.5, 0.0, 0.5, 1.0]
+        hc_odds: List[Dict[str, Any]] = []
+        for i, hc in enumerate(handicaps):
+            label = f"Casa {hc:+.1f}" if hc != 0 else "Sem handicap"
+            hc_odds.append(
+                {
+                    "id": f"ah_home_{hc}",
+                    "tipo": "ah",
+                    "rotulo": label,
+                    "valor": self._jitter(home_odd * (1.0 + hc * 0.12), idx, 60 + i),
+                }
+            )
+        push("handicap_asiatico", "Handicap Asiático (mandante)", hc_odds)
+
+        for side, name, base in [("home", home, home_odd), ("away", away, away_odd)]:
+            side_ou: List[Dict[str, Any]] = []
+            for i, line in enumerate([0.5, 1.5, 2.5]):
+                side_ou.append({"id": f"{side}_over_{line}", "tipo": "team_ou", "rotulo": f"{name} — Mais {line}", "valor": self._jitter(base * 0.95 + line * 0.4, idx, 70 + i + (0 if side == "home" else 10))})
+                side_ou.append({"id": f"{side}_under_{line}", "tipo": "team_ou", "rotulo": f"{name} — Menos {line}", "valor": self._jitter(1.4 + line * 0.35, idx, 80 + i + (0 if side == "home" else 10))})
+            push(f"gols_{side}", f"Total de gols — {name}", side_ou)
+
+        placares = ["1-0", "2-0", "2-1", "1-1", "0-0", "0-1", "1-2", "0-2", "3-1", "2-2", "3-0", "0-3"]
+        cs_odds: List[Dict[str, Any]] = []
+        for i, sc in enumerate(placares):
+            cs_odds.append({"id": f"cs_{sc.replace('-', '_')}", "tipo": "cs", "rotulo": sc, "valor": self._jitter(6.5 + i * 0.9 + (idx % 5), idx, 90 + i, lo=4.0, hi=35.0)})
+        push("placar_exato", "Placar exato", cs_odds)
+
+        push(
+            "intervalo_final",
+            "Intervalo / Final do jogo",
+            [
+                {"id": "htft_1_1", "tipo": "htft", "rotulo": "Casa / Casa", "valor": self._jitter(home_odd * 2.1, idx, 100, lo=2.5, hi=40.0)},
+                {"id": "htft_x_1", "tipo": "htft", "rotulo": "Empate / Casa", "valor": self._jitter(home_odd * 3.2, idx, 101, lo=3.0, hi=45.0)},
+                {"id": "htft_2_2", "tipo": "htft", "rotulo": "Fora / Fora", "valor": self._jitter(away_odd * 2.1, idx, 102, lo=2.5, hi=40.0)},
+                {"id": "htft_x_x", "tipo": "htft", "rotulo": "Empate / Empate", "valor": self._jitter(draw_odd * 4.5, idx, 103, lo=4.0, hi=50.0)},
+            ],
+        )
+
+        push(
+            "escanteios",
+            "Total de escanteios (simulado)",
+            [
+                {"id": "corn_over_95", "tipo": "corners", "rotulo": "Mais de 9.5", "valor": self._jitter(1.82, idx, 110)},
+                {"id": "corn_under_95", "tipo": "corners", "rotulo": "Menos de 9.5", "valor": self._jitter(1.98, idx, 111)},
+                {"id": "corn_over_105", "tipo": "corners", "rotulo": "Mais de 10.5", "valor": self._jitter(2.05, idx, 112)},
+                {"id": "corn_under_105", "tipo": "corners", "rotulo": "Menos de 10.5", "valor": self._jitter(1.75, idx, 113)},
+            ],
+        )
+
+        total_opcoes = sum(len(m["odds"]) for m in markets)
+        return markets, total_opcoes
+
     def _to_frontend_jogo(self, m: Dict[str, Any], idx: int) -> Dict[str, Any]:
         home = m.get("home_team", "Mandante")
         away = m.get("away_team", "Visitante")
@@ -313,24 +454,13 @@ class FootballAPIService:
                     "valor": away_odd,
                 },
             },
-            "mercadosAdicionais": [
-                {
-                    "id": "gols_ou",
-                    "nome": "Gols Mais/Menos",
-                    "odds": [
-                        {"id": "over_25", "tipo": "ou", "rotulo": f"+{over_line} Gols", "valor": round(1.85 + (idx % 5) * 0.05, 2)},
-                        {"id": "under_25", "tipo": "ou", "rotulo": f"-{over_line} Gols", "valor": round(1.95 + (idx % 4) * 0.04, 2)},
-                    ],
-                },
-                {
-                    "id": "ambas_marcam",
-                    "nome": "Ambas Marcam",
-                    "odds": [
-                        {"id": "btts_sim", "tipo": "btts", "rotulo": "Sim", "valor": round(1.72 + (idx % 6) * 0.03, 2)},
-                        {"id": "btts_nao", "tipo": "btts", "rotulo": "Não", "valor": round(2.05 + (idx % 5) * 0.04, 2)},
-                    ],
-                },
-            ],
-            "totalMercadosDisponiveis": 12,
+            **(
+                lambda _ma: {
+                    "mercadosAdicionais": _ma[0],
+                    "totalMercadosDisponiveis": _ma[1],
+                }
+            )(
+                self._build_mercados_adicionais(home, away, home_odd, draw_odd, away_odd, idx, over_line)
+            ),
         }
 
