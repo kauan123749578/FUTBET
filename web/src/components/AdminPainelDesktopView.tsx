@@ -116,7 +116,6 @@ export const AdminPainelDesktopView: React.FC<AdminPainelProps> = ({ onVoltarSim
     nome: '',
     telefone: '',
     senha: '',
-    saldo_inicial: 0
   });
 
   const [codigoValidarAdmin, setCodigoValidarAdmin] = useState('');
@@ -290,14 +289,13 @@ export const AdminPainelDesktopView: React.FC<AdminPainelProps> = ({ onVoltarSim
       nome: formCliente.nome.trim(),
       telefone: formCliente.telefone.trim(),
       senha: formCliente.senha.trim() || '123456',
-      saldo: Number(formCliente.saldo_inicial) || 0
     };
 
     const res = await ApiService.cadastrarCliente(payload);
     if (res.sucesso) {
       confetti({ particleCount: 60, spread: 60 });
       setModalNovoCliente(false);
-      setFormCliente({ nome: '', telefone: '', senha: '', saldo_inicial: 0 });
+      setFormCliente({ nome: '', telefone: '', senha: '' });
       await recarregarTodosDados();
     } else {
       alert(res.erro || 'Erro ao cadastrar cliente.');
@@ -910,7 +908,6 @@ export const AdminPainelDesktopView: React.FC<AdminPainelProps> = ({ onVoltarSim
                         <th className="p-3.5">ID</th>
                         <th className="p-3.5">Nome do Apostador</th>
                         <th className="p-3.5">Telefone / WhatsApp</th>
-                        <th className="p-3.5">Saldo em Conta</th>
                         <th className="p-3.5">Total Apostado</th>
                         <th className="p-3.5">Data de Cadastro</th>
                         <th className="p-3.5 text-center">Contato</th>
@@ -920,7 +917,7 @@ export const AdminPainelDesktopView: React.FC<AdminPainelProps> = ({ onVoltarSim
                     <tbody className="divide-y divide-[#101D3E]">
                       {clientes.length === 0 ? (
                         <tr>
-                          <td colSpan={8} className="p-8 text-center text-gray-400">
+                          <td colSpan={7} className="p-8 text-center text-gray-400">
                             Nenhum cliente cadastrado ainda. Clique em "Cadastrar Novo Cliente" acima!
                           </td>
                         </tr>
@@ -935,9 +932,6 @@ export const AdminPainelDesktopView: React.FC<AdminPainelProps> = ({ onVoltarSim
                               <span>{cli.nome}</span>
                             </td>
                             <td className="p-3.5 font-mono text-gray-300">{cli.telefone}</td>
-                            <td className="p-3.5 font-mono font-bold text-emerald-400">
-                              R$ {Number(cli.saldo || 0).toFixed(2)}
-                            </td>
                             <td className="p-3.5 font-mono font-bold text-blue-400">
                               R$ {Number(cli.total_apostado || 0).toFixed(2)}
                             </td>
@@ -1515,18 +1509,6 @@ export const AdminPainelDesktopView: React.FC<AdminPainelProps> = ({ onVoltarSim
                   onChange={(e) => setFormCliente({ ...formCliente, senha: e.target.value })}
                   className="bg-[#060B18] border border-[#1B2B50] rounded-xl px-3.5 py-2.5 text-sm text-white"
                   required
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-gray-300 mb-1">Saldo Inicial (R$)</label>
-                <input
-                  type="number"
-                  step="5"
-                  min="0"
-                  value={formCliente.saldo_inicial}
-                  onChange={(e) => setFormCliente({ ...formCliente, saldo_inicial: Number(e.target.value) })}
-                  className="w-full bg-[#060B18] border border-[#1B2B50] rounded-xl px-3.5 py-2.5 text-sm text-white font-mono"
                 />
               </div>
 
