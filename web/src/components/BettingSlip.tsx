@@ -12,7 +12,8 @@ import {
   MessageCircle,
   Check,
   Clock,
-  ListOrdered,
+  ArrowLeft,
+  XCircle,
 } from 'lucide-react';
 import { abrirWhatsAppBilhete, sanitizeConfiguracoesBanca } from '../utils/whatsappBilhete';
 
@@ -32,8 +33,9 @@ export const BettingSlip: React.FC = () => {
     sessaoCliente,
     abrirCadastroCliente,
     bilheteGerado,
-    abrirModalComBilhete,
     setAbaAtiva,
+    cancelarBilheteAtivo,
+    setPainelMobile,
   } = useBetting();
 
   const [configs, setConfigs] = useState<ConfiguracoesBanca>(CONFIGS_PADRAO);
@@ -55,7 +57,12 @@ export const BettingSlip: React.FC = () => {
     await simularAposta();
   };
 
-  const showUltimoBilhete = Boolean(bilheteGerado && itensCupom.length === 0);
+  const bilheteVisivel =
+    bilheteGerado && bilheteGerado.status !== 'cancelado' && bilheteGerado.status !== 'Cancelado';
+  const podeCancelar =
+    bilheteVisivel &&
+    (bilheteGerado!.status === 'pendente' ||
+      String(bilheteGerado!.status).toLowerCase() === 'pendente');
 
   const copiarCodigo = () => {
     if (!bilheteGerado) return;
@@ -75,12 +82,20 @@ export const BettingSlip: React.FC = () => {
   return (
     <aside
       id="cupom-sidebar"
-      className="w-full lg:w-80 bg-[#0E1422] border-l border-[#1A253D] flex flex-col shrink-0 text-white select-none shadow-2xl lg:sticky lg:top-[54px] lg:h-[calc(100vh-54px)] lg:max-h-[calc(100vh-54px)]"
+      className="w-full lg:w-80 bg-[#0E1422] border-l border-[#1A253D] flex flex-col shrink-0 text-white select-none shadow-2xl lg:sticky lg:top-[54px] h-[calc(100vh-54px-56px)] lg:h-[calc(100vh-54px)] max-h-[calc(100vh-54px-56px)] lg:max-h-[calc(100vh-54px)]"
     >
-      <div className="bg-[#001D6E] px-3.5 py-2.5 border-b border-[#0D2D8F] flex items-center justify-between shrink-0">
-        <div className="flex items-center gap-2">
-          <Ticket className="w-4 h-4 text-yellow-400" />
-          <h2 className="text-xs font-black tracking-wide uppercase">
+      <div className="bg-[#001D6E] px-3.5 py-2.5 border-b border-[#0D2D8F] flex items-center justify-between shrink-0 gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <button
+            type="button"
+            onClick={() => setPainelMobile('apostas')}
+            className="lg:hidden p-1 rounded-md text-blue-200 hover:bg-white/10 shrink-0"
+            aria-label="Voltar às apostas"
+          >
+            <ArrowLeft className="w-4 h-4" />
+          </button>
+          <Ticket className="w-4 h-4 text-yellow-400 shrink-0" />
+          <h2 className="text-xs font-black tracking-wide uppercase truncate">
             Cupom de Apostas {itensCupom.length > 0 && `(${itensCupom.length})`}
           </h2>
         </div>
@@ -127,7 +142,7 @@ export const BettingSlip: React.FC = () => {
       )}
 
       <div className="p-3 flex-1 overflow-y-auto space-y-2.5 custom-scrollbar">
-        {showUltimoBilhete && bilheteGerado && (
+        {bilheteVisivel && bilheteGerado && (
           <div className="rounded-xl border border-emerald-600/40 bg-emerald-950/25 p-3 space-y-3">
             <div className="flex items-center gap-2 text-emerald-300">
               <Check className="w-4 h-4 shrink-0" />
@@ -161,6 +176,18 @@ export const BettingSlip: React.FC = () => {
                   <span className="text-emerald-400 font-mono">R$ {bilheteGerado.retornoPotencial.toFixed(2)}</span>
                 </p>
               </div>
+              {bilheteGerado.itens.length > 0 && (
+                <div className="pt-2 border-t border-[#1e3a5f] space-y-1.5 max-h-36 overflow-y-auto">
+                  <p className="text-[9px] uppercase font-bold text-gray-500">Palpites no bilhete</p>
+                  {bilheteGerado.itens.map((it, idx) => (
+                    <div key={`${it.jogoId}_${idx}`} className="text-[10px] text-gray-300">
+                      <span className="text-white font-semibold">{it.jogoDescricao}</span>
+                      <span className="text-yellow-400"> · {it.palpiteRotulo}</span>
+                      <span className="text-emerald-400 font-mono"> @{it.oddValor.toFixed(2)}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="grid grid-cols-1 gap-2">
@@ -180,19 +207,21 @@ export const BettingSlip: React.FC = () => {
                 {copiadoCodigo ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
                 {copiadoCodigo ? 'Copiado!' : 'Copiar código e PIN'}
               </button>
-              <button
-                type="button"
-                onClick={() => abrirModalComBilhete(bilheteGerado)}
-                className="w-full py-2 rounded-lg text-[11px] font-bold text-blue-300 hover:text-blue-200 flex items-center justify-center gap-1"
-              >
-                <ListOrdered className="w-3.5 h-3.5" />
-                Ver palpites completos
-              </button>
+              {podeCancelar && (
+                <button
+                  type="button"
+                  onClick={() => cancelarBilheteAtivo()}
+                  className="w-full py-2 rounded-lg border border-red-800/60 bg-red-950/40 hover:bg-red-950/60 text-red-300 text-xs font-bold flex items-center justify-center gap-2"
+                >
+                  <XCircle className="w-4 h-4" />
+                  Cancelar bilhete
+                </button>
+              )}
             </div>
           </div>
         )}
 
-        {itensCupom.length === 0 && !showUltimoBilhete ? (
+        {itensCupom.length === 0 && !bilheteVisivel ? (
           <div className="h-full flex flex-col items-center justify-center text-center p-6 text-gray-400 space-y-3">
             <div className="w-14 h-14 rounded-2xl bg-[#141C2E] border border-[#222E48] flex items-center justify-center text-2xl text-yellow-400">
               🎟️

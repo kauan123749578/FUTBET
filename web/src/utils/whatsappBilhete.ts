@@ -81,5 +81,6 @@ export function mapStatusBilheteApi(status: string): Bilhete['status'] {
   if (s === 'ganhou') return 'premiado';
   if (s === 'perdeu') return 'perdido';
   if (s === 'cancelado') return 'cancelado';
+  if (s === 'pendente') return 'pendente';
   return 'pendente';
 }

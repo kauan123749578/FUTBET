@@ -787,6 +787,29 @@ export const ApiService = {
     }
   },
 
+  async cancelarBilheteCliente(codigo: string, telefone: string): Promise<{ sucesso: boolean; erro?: string }> {
+    try {
+      const res = await fetch(`/api/bilhetes/${encodeURIComponent(codigo.trim().toUpperCase())}/cancelar`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ telefone }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.ok) {
+        const bilhetes = getLocalBilhetes();
+        const idx = bilhetes.findIndex(b => b.codigo.toUpperCase() === codigo.toUpperCase());
+        if (idx !== -1) {
+          bilhetes[idx].status = 'Cancelado';
+          saveLocalBilhetes(bilhetes);
+        }
+        return { sucesso: true };
+      }
+      return { sucesso: false, erro: data.detail || 'Não foi possível cancelar.' };
+    } catch {
+      return { sucesso: false, erro: 'Erro de conexão.' };
+    }
+  },
+
   async excluirCliente(clienteId: number): Promise<{ sucesso: boolean; erro?: string }> {
     try {
       const res = await fetch(`/api/clientes/${clienteId}`, { method: 'DELETE' });

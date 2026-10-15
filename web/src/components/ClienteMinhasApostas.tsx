@@ -40,9 +40,10 @@ function statusLabel(status: Bilhete['status']): { text: string; className: stri
 }
 
 export const ClienteMinhasApostas: React.FC = () => {
-  const { sessaoCliente, abrirModalComBilhete } = useBetting();
+  const { sessaoCliente, abrirBilheteNoCupom, setAbaAtiva, setPainelMobile } = useBetting();
   const [lista, setLista] = useState<Bilhete[]>([]);
   const [carregando, setCarregando] = useState(false);
+  const [cancelando, setCancelando] = useState<string | null>(null);
 
   const carregar = useCallback(async () => {
     if (!sessaoCliente?.telefone) return;
@@ -58,6 +59,25 @@ export const ClienteMinhasApostas: React.FC = () => {
   useEffect(() => {
     carregar();
   }, [carregar]);
+
+  const cancelar = async (b: Bilhete) => {
+    if (!sessaoCliente?.telefone) return;
+    if (
+      !window.confirm(
+        `Cancelar bilhete ${b.codigo}?\n\nUse apenas se ainda não pagou ou combinou com a banca.`
+      )
+    ) {
+      return;
+    }
+    setCancelando(b.codigo);
+    try {
+      const res = await ApiService.cancelarBilheteCliente(b.codigo, sessaoCliente.telefone);
+      if (res.sucesso) await carregar();
+      else alert(res.erro || 'Erro ao cancelar.');
+    } finally {
+      setCancelando(null);
+    }
+  };
 
   if (!sessaoCliente) return null;
 
@@ -110,14 +130,30 @@ export const ClienteMinhasApostas: React.FC = () => {
                     {st.text}
                   </span>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => abrirModalComBilhete(b)}
-                  className="mt-2 text-[11px] font-bold text-blue-400 hover:text-blue-300 flex items-center gap-1"
-                >
-                  <Ticket className="w-3.5 h-3.5" />
-                  Ver detalhes / WhatsApp
-                </button>
+                <div className="mt-2 flex flex-wrap gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      abrirBilheteNoCupom(b);
+                      setAbaAtiva('apostador');
+                      setPainelMobile('cupom');
+                    }}
+                    className="text-[11px] font-bold text-blue-400 hover:text-blue-300 flex items-center gap-1"
+                  >
+                    <Ticket className="w-3.5 h-3.5" />
+                    Abrir no cupom
+                  </button>
+                  {b.status === 'pendente' && (
+                    <button
+                      type="button"
+                      disabled={cancelando === b.codigo}
+                      onClick={() => cancelar(b)}
+                      className="text-[11px] font-bold text-red-400 hover:text-red-300 disabled:opacity-50"
+                    >
+                      {cancelando === b.codigo ? 'Cancelando...' : 'Cancelar bilhete'}
+                    </button>
+                  )}
+                </div>
               </li>
             );
           })}

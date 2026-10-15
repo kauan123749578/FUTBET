@@ -25,6 +25,9 @@ export const Navbar: React.FC = () => {
     abaAtiva,
     setAbaAtiva,
     itensCupom,
+    bilheteGerado,
+    painelMobile,
+    setPainelMobile,
     setDataFiltro,
     setIdCampeonato,
     sessaoOperador,
@@ -37,6 +40,14 @@ export const Navbar: React.FC = () => {
     abrirCadastroCliente,
     totalAoVivo,
   } = useBetting();
+
+  const irParaCupom = () => {
+    setAbaAtiva('apostador');
+    setPainelMobile('cupom');
+  };
+
+  const badgeCupom =
+    itensCupom.length + (bilheteGerado && bilheteGerado.status === 'pendente' ? 1 : 0);
 
   return (
     <>
@@ -112,17 +123,19 @@ export const Navbar: React.FC = () => {
             </button>
 
             <button
-              onClick={() => {
-                const el = document.getElementById('cupom-sidebar');
-                if (el) el.scrollIntoView({ behavior: 'smooth' });
-              }}
-              className="relative flex items-center gap-1 border border-[#2a3654] text-gray-200 hover:bg-white/5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors"
+              type="button"
+              onClick={irParaCupom}
+              className={`relative flex items-center gap-1 border px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                painelMobile === 'cupom'
+                  ? 'border-yellow-400/60 bg-yellow-400/10 text-yellow-200'
+                  : 'border-[#2a3654] text-gray-200 hover:bg-white/5'
+              }`}
             >
               <Ticket className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Cupom</span>
-              {itensCupom.length > 0 && (
+              {badgeCupom > 0 && (
                 <span className="bg-yellow-400 text-[#0a1628] text-[10px] min-w-[1.1rem] h-[1.1rem] rounded-full flex items-center justify-center font-bold">
-                  {itensCupom.length}
+                  {badgeCupom}
                 </span>
               )}
             </button>
@@ -178,13 +191,15 @@ export const Navbar: React.FC = () => {
 
       <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-[#050B1A] border-t border-[#121E3E] px-2 py-1.5 shadow-2xl flex items-center justify-around text-gray-400">
         <button
+          type="button"
           onClick={() => {
             setAbaAtiva('apostador');
+            setPainelMobile('apostas');
             setDataFiltro('todos');
             setIdCampeonato(undefined);
           }}
           className={`flex flex-col items-center gap-0.5 p-1 rounded-lg text-[10px] font-semibold ${
-            abaAtiva === 'apostador' ? 'text-white' : 'hover:text-gray-200'
+            abaAtiva === 'apostador' && painelMobile === 'apostas' ? 'text-white' : 'hover:text-gray-200'
           }`}
         >
           <Trophy className="w-4 h-4" />
@@ -215,17 +230,17 @@ export const Navbar: React.FC = () => {
           <span>{sessaoCliente ? 'Conta' : 'Entrar'}</span>
         </button>
         <button
-          onClick={() => {
-            const el = document.getElementById('cupom-sidebar');
-            if (el) el.scrollIntoView({ behavior: 'smooth' });
-          }}
-          className="flex flex-col items-center gap-0.5 p-1 rounded-lg text-[10px] font-semibold relative hover:text-gray-200"
+          type="button"
+          onClick={irParaCupom}
+          className={`flex flex-col items-center gap-0.5 p-1 rounded-lg text-[10px] font-semibold relative ${
+            painelMobile === 'cupom' ? 'text-yellow-300' : 'hover:text-gray-200'
+          }`}
         >
           <Ticket className="w-4 h-4" />
           <span>Cupom</span>
-          {itensCupom.length > 0 && (
+          {badgeCupom > 0 && (
             <span className="absolute -top-0.5 right-0 bg-yellow-400 text-[#0a1628] text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
-              {itensCupom.length}
+              {badgeCupom}
             </span>
           )}
         </button>

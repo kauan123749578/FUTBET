@@ -1,4 +1,4 @@
-import type { SessaoCliente, SessaoOperador } from '../types/betting';
+import type { Bilhete, SessaoCliente, SessaoOperador } from '../types/betting';
 
 const SESSAO_CLIENTE_KEY = 'futbet_sessao_cliente_v1';
 const SESSAO_OPERADOR_KEY = 'futbet_sessao_operador_v1';
@@ -85,4 +85,32 @@ export function saveAbaPersistida(aba: AbaPersistida) {
 
 export function clearAbaPersistida() {
   localStorage.removeItem(SESSAO_ABA_KEY);
+}
+
+const BILHETE_ATIVO_PREFIX = 'futbet_bilhete_ativo_v1_';
+
+function telKey(telefone: string): string {
+  return (telefone || '').replace(/\D/g, '');
+}
+
+/** Bilhete exibido no cupom — sobrevive a F5 (por apostador). */
+export function loadBilheteAtivo(telefone: string): Bilhete | null {
+  const key = telKey(telefone);
+  if (!key) return null;
+  return readStored<Bilhete>(BILHETE_ATIVO_PREFIX + key);
+}
+
+export function saveBilheteAtivo(telefone: string, bilhete: Bilhete | null) {
+  const key = telKey(telefone);
+  if (!key) return;
+  const storageKey = BILHETE_ATIVO_PREFIX + key;
+  if (!bilhete) {
+    localStorage.removeItem(storageKey);
+    return;
+  }
+  writeStored(storageKey, bilhete);
+}
+
+export function clearBilheteAtivo(telefone: string) {
+  saveBilheteAtivo(telefone, null);
 }

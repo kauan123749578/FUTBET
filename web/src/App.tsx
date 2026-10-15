@@ -16,7 +16,7 @@ import { ClientAuthModal } from './components/ClientAuthModal';
 import { WhatsAppFloatButton } from './components/WhatsAppFloatButton';
 
 const MainLayout: React.FC = () => {
-  const { abaAtiva, setAbaAtiva } = useBetting();
+  const { abaAtiva, setAbaAtiva, painelMobile } = useBetting();
 
   // Quando o Cambista estiver autenticado e na sua aba dedicada
   if (abaAtiva === 'cambista') {
@@ -51,30 +51,28 @@ const MainLayout: React.FC = () => {
 
       {/* Main 3-Column Desktop Grid Layout */}
       <div className="flex-1 max-w-[1920px] w-full mx-auto flex flex-col lg:flex-row">
-        {/* Left Sidebar Menu */}
-        <SidebarLeft />
+        <div className={painelMobile === 'cupom' ? 'hidden lg:contents' : 'contents'}>
+          <SidebarLeft />
+          <main className="flex-1 min-w-0 p-3 sm:p-5 overflow-y-auto pb-24 lg:pb-5">
+            {abaAtiva === 'apostador' && (
+              <>
+                <HeroBanner />
+                <MatchTable />
+              </>
+            )}
 
-        {/* Center Main Stage */}
-        <main className="flex-1 min-w-0 p-3 sm:p-5 overflow-y-auto">
-          {abaAtiva === 'apostador' && (
-            <>
-              <HeroBanner />
-              <MatchTable />
-            </>
-          )}
+            {abaAtiva === 'conferir' && <CheckTicketView />}
 
-          {abaAtiva === 'conferir' && <CheckTicketView />}
+            {abaAtiva === 'regulamento' && <RegulationView />}
+          </main>
+        </div>
 
-          {abaAtiva === 'regulamento' && <RegulationView />}
-        </main>
-
-        {/* Right Betting Slip Sidebar */}
-        <BettingSlip />
+        <div className={painelMobile === 'apostas' ? 'hidden lg:contents' : 'contents flex-1 lg:contents min-h-0'}>
+          <BettingSlip />
+        </div>
       </div>
 
-      {/* Interactive Modals */}
       <AdditionalMarketsModal />
-      <TicketReceiptModal />
       <OperadorLoginModal />
       <ClientAuthModal />
       <WhatsAppFloatButton />

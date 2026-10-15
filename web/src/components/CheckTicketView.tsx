@@ -8,7 +8,7 @@ import { mapStatusBilheteApi } from '../utils/whatsappBilhete';
 
 
 export const CheckTicketView: React.FC = () => {
-  const { abrirModalComBilhete, sessaoCliente } = useBetting();
+  const { abrirBilheteNoCupom, sessaoCliente, setPainelMobile } = useBetting();
   const [codigoInput, setCodigoInput] = useState('');
   const [bilheteEncontrado, setBilheteEncontrado] = useState<Bilhete | null>(null);
   const [buscado, setBuscado] = useState(false);
@@ -223,7 +223,10 @@ export const CheckTicketView: React.FC = () => {
               Hash: {bilheteEncontrado.hashSeguranca}
             </span>
             <button
-              onClick={() => abrirModalComBilhete(bilheteEncontrado)}
+              onClick={() => {
+                abrirBilheteNoCupom(bilheteEncontrado);
+                setPainelMobile('cupom');
+              }}
               className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-4 py-2 rounded-lg flex items-center gap-1.5 transition-colors"
             >
               <Ticket className="w-3.5 h-3.5" />

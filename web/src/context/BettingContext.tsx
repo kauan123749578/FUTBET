@@ -11,8 +11,13 @@ import {
   loadOperadorPersistido,
   saveOperadorPersistido,
   clearOperadorPersistido,
+  loadBilheteAtivo,
+  saveBilheteAtivo,
+  clearBilheteAtivo,
   type AbaPersistida,
 } from '../services/sessionPersist';
+
+export type PainelMobile = 'apostas' | 'cupom';
 
 type AbaApp = AbaPersistida;
 
@@ -57,6 +62,12 @@ interface BettingContextType {
   simularAposta: () => Promise<Bilhete | null>;
   fecharModalBilhete: voidCallback;
   abrirModalComBilhete: (b: Bilhete) => void;
+  abrirBilheteNoCupom: (b: Bilhete) => void;
+  cancelarBilheteAtivo: () => Promise<boolean>;
+  limparBilheteDoCupom: voidCallback;
+
+  painelMobile: PainelMobile;
+  setPainelMobile: (p: PainelMobile) => void;
 
   // Navegação do Terminal
   abaAtiva: 'apostador' | 'conferir' | 'cambista' | 'regulamento' | 'admin';
@@ -310,10 +321,10 @@ export const BettingProvider: React.FC<{ children: React.ReactNode }> = ({ child
     }
   }, [itensCupom]);
 
-  // Modal de Bilhete
   const [bilheteGerado, setBilheteGerado] = useState<Bilhete | null>(null);
   const [modalBilheteAberto, setModalBilheteAberto] = useState(false);
   const [isSimulando, setIsSimulando] = useState(false);
+  const [painelMobile, setPainelMobile] = useState<PainelMobile>('apostas');
 
   // Modal de Mercados
   const [jogoMercadosAberto, setJogoMercadosAberto] = useState<Jogo | null>(null);
@@ -366,6 +377,7 @@ export const BettingProvider: React.FC<{ children: React.ReactNode }> = ({ child
         i => !(i.jogoId === item.jogoId && i.mercadoId === item.mercadoId)
       );
 
+      queueMicrotask(() => setPainelMobile('cupom'));
       return [...filtrado, item];
     });
   }, [sessaoCliente, abrirCadastroCliente]);
@@ -428,8 +440,10 @@ export const BettingProvider: React.FC<{ children: React.ReactNode }> = ({ child
         retornoPotencial
       });
       setBilheteGerado(bilhete);
-      setModalBilheteAberto(true);
-      limparCupom(); // Limpa cupom após simular com sucesso
+      saveBilheteAtivo(sessaoCliente.telefone, bilhete);
+      setPainelMobile('cupom');
+      setAbaAtivaState('apostador');
+      limparCupom();
       return bilhete;
     } finally {
       setIsSimulando(false);
@@ -444,6 +458,59 @@ export const BettingProvider: React.FC<{ children: React.ReactNode }> = ({ child
     setBilheteGerado(b);
     setModalBilheteAberto(true);
   }, []);
+
+  const abrirBilheteNoCupom = useCallback(
+    (b: Bilhete) => {
+      setBilheteGerado(b);
+      if (sessaoCliente?.telefone) saveBilheteAtivo(sessaoCliente.telefone, b);
+      setPainelMobile('cupom');
+      setAbaAtivaState('apostador');
+    },
+    [sessaoCliente?.telefone]
+  );
+
+  const limparBilheteDoCupom = useCallback(() => {
+    setBilheteGerado(null);
+    if (sessaoCliente?.telefone) clearBilheteAtivo(sessaoCliente.telefone);
+  }, [sessaoCliente?.telefone]);
+
+  const cancelarBilheteAtivo = useCallback(async () => {
+    if (!bilheteGerado || !sessaoCliente?.telefone) return false;
+    if (
+      !window.confirm(
+        `Cancelar o bilhete ${bilheteGerado.codigo}?\n\nSó faça isso se ainda NÃO pagou ou se combinou com a banca.`
+      )
+    ) {
+      return false;
+    }
+    const res = await ApiService.cancelarBilheteCliente(bilheteGerado.codigo, sessaoCliente.telefone);
+    if (!res.sucesso) {
+      alert(res.erro || 'Erro ao cancelar.');
+      return false;
+    }
+    limparBilheteDoCupom();
+    return true;
+  }, [bilheteGerado, sessaoCliente?.telefone, limparBilheteDoCupom]);
+
+  useEffect(() => {
+    if (!sessaoCliente?.telefone) {
+      setBilheteGerado(null);
+      return;
+    }
+    const saved = loadBilheteAtivo(sessaoCliente.telefone);
+    if (saved && saved.status !== 'cancelado') {
+      setBilheteGerado(saved);
+    }
+  }, [sessaoCliente?.telefone]);
+
+  useEffect(() => {
+    if (!sessaoCliente?.telefone || !bilheteGerado) return;
+    if (bilheteGerado.status === 'cancelado') {
+      clearBilheteAtivo(sessaoCliente.telefone);
+      return;
+    }
+    saveBilheteAtivo(sessaoCliente.telefone, bilheteGerado);
+  }, [bilheteGerado, sessaoCliente?.telefone]);
 
   return (
     <BettingContext.Provider
@@ -472,6 +539,11 @@ export const BettingProvider: React.FC<{ children: React.ReactNode }> = ({ child
         simularAposta,
         fecharModalBilhete,
         abrirModalComBilhete,
+        abrirBilheteNoCupom,
+        cancelarBilheteAtivo,
+        limparBilheteDoCupom,
+        painelMobile,
+        setPainelMobile,
         abaAtiva,
         setAbaAtiva,
         jogoMercadosAberto,

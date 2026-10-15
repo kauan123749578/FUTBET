@@ -102,7 +102,11 @@ class ClienteLoginSchema(BaseModel):
 class ValidarPinSchema(BaseModel):
     pin_ou_codigo: str
     cambista_id: Optional[int] = None
-    operador_nome: Optional[str] = "Cambista"
+    operador_nome: Optional[str] = "Cambista Autorizado"
+
+
+class CancelarBilheteSchema(BaseModel):
+    telefone: str
 
 class CriarBilheteSchema(BaseModel):
     apostador_nome: str
@@ -602,6 +606,32 @@ def criar_bilhete(dados: CriarBilheteSchema, db: Session = Depends(get_db)):
         "pin": novo.pin,
         "message": "Bilhete gerado com sucesso!"
     }
+
+@app.post("/api/bilhetes/{codigo}/cancelar")
+def cancelar_bilhete_cliente(codigo: str, dados: CancelarBilheteSchema, db: Session = Depends(get_db)):
+    c = codigo.strip().upper()
+    b = db.query(Bilhete).filter(Bilhete.codigo == c).first()
+    if not b:
+        raise HTTPException(status_code=404, detail="Bilhete não encontrado.")
+
+    if (b.status or "").lower() not in ("pendente",):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Só é possível cancelar bilhetes pendentes. Status atual: {b.status}.",
+        )
+
+    tel_req = _only_digits(dados.telefone)
+    tel_bil = _only_digits(b.cliente_telefone or "")
+    if not tel_req or not tel_bil:
+        raise HTTPException(status_code=403, detail="Não foi possível confirmar o titular do bilhete.")
+    if tel_req != tel_bil and not tel_bil.endswith(tel_req[-11:]) and not tel_req.endswith(tel_bil[-11:]):
+        raise HTTPException(status_code=403, detail="Este bilhete não pertence à sua conta.")
+
+    b.status = "Cancelado"
+    b.validado_por = "Cancelado pelo cliente"
+    db.commit()
+    return {"success": True, "message": f"Bilhete #{b.codigo} cancelado.", "codigo": b.codigo, "status": b.status}
+
 
 @app.put("/api/bilhetes/{codigo}/status")
 def atualizar_status_bilhete(codigo: str, dados: StatusBilheteSchema, db: Session = Depends(get_db)):
